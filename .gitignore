@@ -1,0 +1,34 @@
+# Node.js
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Logs
+logs
+*.log
+npm-debug.log.*
+
+# Dependencias de frontend
+bower_components/
+
+# Directorios y archivos de configuración
+.idea/
+.vscode/
+.DS_Store
+.env
+
+# Archivos generados por el compilador
+dist/
+build/
+
+# Archivos de configuración de Git
+.gitmodules
+.gitconfig
+
+# Archivos de Google Apps Script
+*.gs
+*.clasp.json
+*.gs~ 
+
+# Archivos de caché
+.cache/
