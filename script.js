@@ -1,25 +1,13 @@
 fetch('https://script.google.com/macros/s/AKfycbw2YLz63oPa35m2yal4gMdpUwMd6ls5q9PYLG3XBnj7nY6aQC90oayNaKMkrTcO8dPl/exec')
   .then(response => response.json())
   .then(data => {
-    // Gráfico de Distribución por Facultad
-    const facultadData = countBy(data, 'Facultad');
-    let facultadLabels = Object.keys(facultadData);
-    let facultadValues = Object.values(facultadData);
-    console.log(facultadLabels);
 
-    // Combina labels y values en un array de objetos para facilitar la ordenación
-    const facultadDataArray = facultadLabels.map((label, index) => {
-        return { label: label, value: facultadValues[index] };
-    });
-    
-    // Ordena el array por los valores (número de proyectos) de mayor a menor
-    facultadDataArray.sort((a, b) => b.value - a.value);  // De mayor a menor
-    
-    // Extrae las etiquetas y los valores ordenados
-    facultadLabels = facultadDataArray.map(item => item.label);
-    facultadValues = facultadDataArray.map(item => item.value);
+    //Gráfico de distribucion por facultad
+    const facultadData = transformAndSortData(data, 'Facultad');
+    const facultadLabels = facultadData.labels;
+    const facultadValues = facultadData.values;
 
-    const facultadChart = new Chart(document.getElementById('facultadChart'), {
+    new Chart(document.getElementById('facultadChart'), {
       type: 'bar',
       data: {
         labels: facultadLabels,
@@ -35,55 +23,73 @@ fetch('https://script.google.com/macros/s/AKfycbw2YLz63oPa35m2yal4gMdpUwMd6ls5q9
         responsive: true,
         maintainAspectRatio: false,
         scales: {
-            y: {
-              title: {
-                display: true,
-                text: 'Número de proyectos'
-              },
-              beginAtZero: true,
-              ticks: {
-                // Asegúrate de que los valores se muestren correctamente sin duplicarse
-                stepSize: 1,  // Asegura que los pasos en el eje Y sean enteros
-                callback: function(value) {
-                  // Elimina comas y asegúrate de que los números se muestran como enteros
-                  return value % 1 === 0 ? value : Math.round(value);  // Si el número tiene decimales, lo redondea
-                }
+          y: {
+            title: {
+              display: true,
+              text: 'Número de auspicios',
+              font: {
+                weight: 'bold'
               }
             },
-            x:{
-                ticks: {
-                    callback: function(value, index, ticks) {
-                        // Accede al label original usando el índice
-                        let label = facultadLabels[index];
-                        label = label.replace(/FACULTAD DE\s*/gi, '').trim();
-                        // Si el label es muy largo, lo trunca
-                        return label && label.length > 20 ? label.substring(0, 20) + "..." : label;
-                      },
-                      minRotation: 25
-                },
-                title:{
-                    display: true,
-                    text: 'Facultad'
-                }
+            beginAtZero: true,
+            ticks: {
+              // Asegúrate de que los valores se muestren correctamente sin duplicarse
+              stepSize: 1,  // Asegura que los pasos en el eje Y sean enteros
+              callback: function (value) {
+                // Elimina comas y asegúrate de que los números se muestran como enteros
+                return value % 1 === 0 ? value : Math.round(value);  // Si el número tiene decimales, lo redondea
+              }
             }
+          },
+          x: {
+            ticks: {
+              callback: function (value, index, ticks) {
+                // Accede al label original usando el índice
+                let label = facultadLabels[index];
+                label = label.replace(/FACULTAD DE\s*/gi, '').trim();
+                // Si el label es muy largo, lo trunca
+                return label && label.length > 20 ? label.substring(0, 20) + "..." : label;
+              },
+              minRotation: 25
+            },
+            title: {
+              display: true,
+              text: 'Facultad',
+              font: {
+                weight: 'bold'
+              }
+            }
+          }
         },
         plugins: {
-            title: {
-                display: true,
-                text: 'Número de auspicios por Facultad',
-                font:{
-                    size: 16
-                }
-            }            
+          title: {
+            display: true,
+            text: 'Número de auspicios por Facultad',
+            font: {
+              size: 16
+            },
+            padding:{
+              bottom:28
+            }
+          },
+          legend: {
+            display: false
+          },
+          datalabels: {
+            color: 'black',               // Color del texto
+            anchor: 'end',                // Posición de las etiquetas
+            align: 'top',                 // Alineación de las etiquetas
+            formatter: (value) => value   // Mostrar los valores directamente
+          }
         }
-      }
+      },
+      plugins: [ChartDataLabels]  // Asegúrate de agregar el plugin
     });
-    facultadChart.update();
 
     // Gráfico de Distribución por Departamento
-    const departamentoData = countBy(data, 'Dpto.');
-    const departamentoLabels = Object.keys(departamentoData);
-    const departamentoValues = Object.values(departamentoData);
+    const departamentoData = transformAndSortData(data, 'Dpto.');
+    const departamentoLabels = departamentoData.labels;
+    const departamentoValues = departamentoData.values;
 
     new Chart(document.getElementById('departamentoChart'), {
       type: 'bar',
@@ -96,14 +102,69 @@ fetch('https://script.google.com/macros/s/AKfycbw2YLz63oPa35m2yal4gMdpUwMd6ls5q9
           borderColor: 'rgba(153, 102, 255, 1)',
           borderWidth: 1
         }]
-      }
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          y: {
+            title: {
+              display: true,
+              text: 'Número de auspicios',
+              font: {
+                weight: 'bold'
+              }
+            },
+            beginAtZero: true,
+            ticks: {
+              // Asegúrate de que los valores se muestren correctamente sin duplicarse
+              stepSize: 1,  // Asegura que los pasos en el eje Y sean enteros
+              callback: function (value) {
+                // Elimina comas y asegúrate de que los números se muestran como enteros
+                return value % 1 === 0 ? value : Math.round(value);  // Si el número tiene decimales, lo redondea
+              }
+            }
+          },
+          x: {
+            title: {
+              display: true,
+              text: 'Departamento',
+              font: {
+                weight: 'bold'
+              }
+            }
+          }
+        },
+        plugins: {
+          title: {
+            display: true,
+            text: 'Número de auspicios por Departamento',
+            font: {
+              size: 16
+            },
+            padding:{
+              bottom:28
+            }
+          },
+          legend: {
+            display: false
+          },
+          datalabels: {
+            color: 'black',               // Color del texto
+            anchor: 'end',                // Posición de las etiquetas
+            align: 'top',                 // Alineación de las etiquetas
+            formatter: (value) => value   // Mostrar los valores directamente
+          }
+        }
+      },
+      plugins: [ChartDataLabels]
     });
 
     // Gráfico de Artículos en Cuartiles Q1 y Q2
     const cuartilesQ1Q2 = data.filter(item => item.Quartil === 'Q1' || item.Quartil === 'Q2');
-    const cuartilesCount = countBy(cuartilesQ1Q2, 'Quartil');
-    const cuartilesLabels = Object.keys(cuartilesCount);
-    const cuartilesValues = Object.values(cuartilesCount);
+    const cuartilesCount = transformAndSortData(cuartilesQ1Q2, 'Quartil');
+    const cuartilesLabels = cuartilesCount.labels;
+    const cuartilesValues = cuartilesCount.values;
 
     new Chart(document.getElementById('cuartilesChart'), {
       type: 'bar',
@@ -116,7 +177,62 @@ fetch('https://script.google.com/macros/s/AKfycbw2YLz63oPa35m2yal4gMdpUwMd6ls5q9
           borderColor: ['rgba(255, 159, 64, 1)', 'rgba(75, 192, 192, 1)'],
           borderWidth: 1
         }]
-      }
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          y: {
+            title: {
+              display: true,
+              text: 'Número de auspicios',
+              font: {
+                weight: 'bold'
+              }
+            },
+            beginAtZero: true,
+            ticks: {
+              // Asegúrate de que los valores se muestren correctamente sin duplicarse
+              stepSize: 1,  // Asegura que los pasos en el eje Y sean enteros
+              callback: function (value) {
+                // Elimina comas y asegúrate de que los números se muestran como enteros
+                return value % 1 === 0 ? value : Math.round(value);  // Si el número tiene decimales, lo redondea
+              }
+            }
+          },
+          x: {
+            title: {
+              display: true,
+              text: 'Cuartil de la Revista',
+              font: {
+                weight: 'bold'
+              }
+            }
+          }
+        },
+        plugins: {
+          title: {
+            display: true,
+            text: 'Número de auspicios por Cuartiles',
+            font: {
+              size: 16
+            },
+            padding:{
+              bottom:28
+            }
+          },
+          legend: {
+            display: false
+          },
+          datalabels: {
+            color: 'black',               // Color del texto
+            anchor: 'end',                // Posición de las etiquetas
+            align: 'top',                 // Alineación de las etiquetas
+            formatter: (value) => value   // Mostrar los valores directamente
+          }
+        }
+      },
+      plugins: [ChartDataLabels]
     });
   })
   .catch(error => console.error('Error al obtener los datos:', error));
@@ -132,3 +248,18 @@ function countBy(array, key) {
   }, {});
 }
 
+// Función para transformar y ordenar los datos
+function transformAndSortData(data, key) {
+  // Contar ocurrencias por clave
+  const countData = countBy(data, key);
+
+  // Convertir a arrays de labels y values
+  const labels = Object.keys(countData);
+  const values = Object.values(countData);
+
+  // Ordenar de mayor a menor según los valores
+  const sortedLabels = labels.sort((a, b) => countData[b] - countData[a]);
+  const sortedValues = sortedLabels.map(label => countData[label]);
+
+  return { labels: sortedLabels, values: sortedValues };
+}
