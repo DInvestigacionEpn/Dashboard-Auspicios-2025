@@ -1,29 +1,63 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dashboard</title>
-  <link rel="stylesheet" href="styles.css">
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
 </head>
+
 <body>
-    <h2>Dashboard de Publicaciones</h2>
-    <div class="chart-container">
-        <div class="chart">
-            <canvas id="facultadChart"></canvas>
+    <div class="tabs">
+        <button class="tab-button active" data-tab="publicaciones">Publicaciones</button>
+        <button class="tab-button" data-tab="salidas">Salidas al Exterior</button>
+        <button class="tab-button" data-tab="apoyo">Apoyo Económico</button>
+    </div>
+
+    <div class="tab-content active" id="publicaciones">
+        <h2>Dashboard de Publicaciones</h2>
+        <div class="chart-container">
+            <div class="chart">
+                <canvas id="facultadChart"></canvas>
+            </div>
+            <div class="chart">
+                <canvas id="departamentoChart"></canvas>
+            </div>
         </div>
-        <div class="chart">
-            <canvas id="departamentoChart"></canvas>
+        <div class="chart-container">
+            <div class="chart">
+                <canvas id="cuartilesChart"></canvas>
+            </div>
         </div>
     </div>
-    <div class="chart-container">
-        <div class="chart">
-            <canvas id="cuartilesChart"></canvas>
+
+    <div class="tab-content" id="salidas">
+        <h2>Dashboard de Salidas al Exterior e Inscripciones</h2>
+        <div class="chart-container">
+            <div class="chart">
+                <canvas id="salidasChart"></canvas>
+            </div>
+            <div class="chart">
+                <canvas id="salidasChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="tab-content" id="apoyo">
+        <h2>Dashboard de Apoyo Económico</h2>
+        <div class="chart-container">
+            <div class="chart">
+                <canvas id="apoyoChart"></canvas>
+            </div>
+            <div class="chart">
+                <canvas id="apoyoChart"></canvas>
+            </div>
         </div>
     </div>
     <script src="script.js"></script>
-  </body>
-  
+</body>
+
 </html>

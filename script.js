@@ -1,9 +1,10 @@
 fetch('https://script.google.com/macros/s/AKfycbw2YLz63oPa35m2yal4gMdpUwMd6ls5q9PYLG3XBnj7nY6aQC90oayNaKMkrTcO8dPl/exec')
   .then(response => response.json())
   .then(data => {
-
+/************************************PUBLICACIONES***************************************/
     //Gráfico de distribucion por facultad
-    const facultadData = transformAndSortData(data, 'Facultad');
+    const publicaciones = data.publicaciones;
+    const facultadData = transformAndSortData(publicaciones, 'Facultad');
     const facultadLabels = facultadData.labels;
     const facultadValues = facultadData.values;
 
@@ -87,7 +88,7 @@ fetch('https://script.google.com/macros/s/AKfycbw2YLz63oPa35m2yal4gMdpUwMd6ls5q9
     });
 
     // Gráfico de Distribución por Departamento
-    const departamentoData = transformAndSortData(data, 'Dpto.');
+    const departamentoData = transformAndSortData(publicaciones, 'Dpto.');
     const departamentoLabels = departamentoData.labels;
     const departamentoValues = departamentoData.values;
 
@@ -161,7 +162,7 @@ fetch('https://script.google.com/macros/s/AKfycbw2YLz63oPa35m2yal4gMdpUwMd6ls5q9
     });
 
     // Gráfico de Artículos en Cuartiles Q1 y Q2
-    const cuartilesQ1Q2 = data.filter(item => item.Quartil === 'Q1' || item.Quartil === 'Q2');
+    const cuartilesQ1Q2 = publicaciones.filter(item => item.Quartil === 'Q1' || item.Quartil === 'Q2');
     const cuartilesCount = transformAndSortData(cuartilesQ1Q2, 'Quartil');
     const cuartilesLabels = cuartilesCount.labels;
     const cuartilesValues = cuartilesCount.values;
@@ -234,17 +235,125 @@ fetch('https://script.google.com/macros/s/AKfycbw2YLz63oPa35m2yal4gMdpUwMd6ls5q9
       },
       plugins: [ChartDataLabels]
     });
-  })
+  /************************************SALIDAS***************************************/
+// 2. Salidas al Exterior: contar por "País del evento"
+const salidas = data.salidas;
+const salidasCount = transformAndSortData(salidas, "País del evento");
+const salidasLabels = salidasCount.labels;
+const salidasValues = salidasCount.values;
+
+new Chart(document.getElementById('salidasChart'), {
+  type: 'bar',
+  data: {
+    labels: salidasLabels,
+    datasets: [{
+      label: 'Número de Salidas por País',
+      data: salidasValues,
+      backgroundColor: 'rgba(255, 159, 64, 0.2)',
+      borderColor: 'rgba(255, 159, 64, 1)',
+      borderWidth: 1
+    }]
+  },
+  options: {
+    responsive: true,
+    plugins: {
+      title: {
+        display: true,
+        text: 'Salidas al Exterior',
+        font: { size: 16 },
+        padding: { top: 20 }
+      },
+      legend: { display: false },
+      datalabels: {
+        color: 'black',
+        anchor: 'end',
+        align: 'top',
+        formatter: (value) => value
+      }
+    },
+    scales: {
+      x: {
+        title: { display: true, text: 'País del evento', font: { weight: 'bold' } }
+      },
+      y: {
+        title: { display: true, text: 'Número de Salidas', font: { weight: 'bold' } },
+        ticks: { beginAtZero: true, stepSize: 1 }
+      }
+    }
+  },
+  plugins: [ChartDataLabels]
+});
+
+/**********************************APOYO******************************************** */
+// 3. Apoyo Económico: contar por "Facultad" (o cambiar la clave según se requiera)
+const apoyo = data.apoyo;
+const apoyoCount = transformAndSortData(apoyo, "Facultad");
+const apoyoLabels = apoyoCount.labels;
+const apoyoValues = apoyoCount.values;
+
+new Chart(document.getElementById('apoyoChart'), {
+  type: 'bar',
+  data: {
+    labels: apoyoLabels,
+    datasets: [{
+      label: 'Número de Apoyos Económicos por Facultad',
+      data: apoyoValues,
+      backgroundColor: 'rgba(153, 102, 255, 0.2)',
+      borderColor: 'rgba(153, 102, 255, 1)',
+      borderWidth: 1
+    }]
+  },
+  options: {
+    responsive: true,
+    plugins: {
+      title: {
+        display: true,
+        text: 'Apoyo Económico por Facultad',
+        font: { size: 16 },
+        padding: { top: 20 }
+      },
+      legend: { display: false },
+      datalabels: {
+        color: 'black',
+        anchor: 'end',
+        align: 'top',
+        formatter: (value) => value
+      }
+    },
+    scales: {
+      x: {
+        title: { display: true, text: 'Facultad', font: { weight: 'bold' } }
+      },
+      y: {
+        title: { display: true, text: 'Número de Apoyos', font: { weight: 'bold' } },
+        ticks: { beginAtZero: true, stepSize: 1 }
+      }
+    }
+  },
+  plugins: [ChartDataLabels]
+});  
+})
   .catch(error => console.error('Error al obtener los datos:', error));
 
 // Función para contar ocurrencias de una propiedad
-function countBy(array, key) {
+function countBy2(array, key) {
   return array.reduce(function (result, item) {
     if (!result[item[key]]) {
       result[item[key]] = 0; // Si no existe la clave, inicializa en 0
     }
     result[item[key]]++; // Incrementa el conteo correctamente
     return result;
+  }, {});
+}
+
+// Función para contar ocurrencias en un array de objetos según una clave
+function countBy(arr, key) {
+  return arr.reduce((acc, obj) => {
+    let prop = obj[key];
+    if (prop) {
+      acc[prop] = (acc[prop] || 0) + 1;
+    }
+    return acc;
   }, {});
 }
 
@@ -263,3 +372,20 @@ function transformAndSortData(data, key) {
 
   return { labels: sortedLabels, values: sortedValues };
 }
+
+document.addEventListener("DOMContentLoaded", function () {
+  const buttons = document.querySelectorAll(".tab-button");
+  const contents = document.querySelectorAll(".tab-content");
+
+  buttons.forEach(button => {
+    button.addEventListener("click", function () {
+      // Quitar la clase 'active' de todos los botones y contenidos
+      buttons.forEach(btn => btn.classList.remove("active"));
+      contents.forEach(content => content.classList.remove("active"));
+
+      // Activar la pestaña seleccionada
+      this.classList.add("active");
+      document.getElementById(this.dataset.tab).classList.add("active");
+    });
+  });
+});

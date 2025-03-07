@@ -30,6 +30,34 @@ body {
     width: 100% !important;
     height: auto !important;
   }
+
+  .tabs {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 20px;
+  }
+  
+  .tab-button {
+    background-color: #f1f1f1;
+    border: none;
+    padding: 10px 20px;
+    cursor: pointer;
+    font-size: 16px;
+  }
+  
+  .tab-button.active {
+    background-color: #4CAF50;
+    color: white;
+  }
+  
+  .tab-content {
+    display: none;
+  }
+  
+  .tab-content.active {
+    display: block;
+  }
+  
   @media (max-width: 1008px) {
     .chart-container {
       flex-direction: column;
