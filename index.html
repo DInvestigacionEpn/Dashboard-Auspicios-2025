@@ -36,28 +36,55 @@
 
     <div class="tab-content" id="salidas">
         <h2>Dashboard de Salidas al Exterior e Inscripciones</h2>
-        <div class="chart-container">
-            <div class="chart">
-                <canvas id="salidasChart"></canvas>
+        <div id="globalFilterContainer">
+            <label for="globalFilter">Filtrar por Tipo de Auspicio: </label>
+            <select id="globalFilter" >
+              <option value="todos">Todos</option>
+              <option value="AUSPICIO">Auspicio</option>
+              <option value="SOLO INSCRIPCION">Solo Inscripción</option>
+            </select>
+            <div class="chart-container">
+                <div class="chart">
+                    <canvas id="tipoAuspicioFacultadChart"></canvas>
+                </div>
+                <div class="chart">
+                    <canvas id="tipoAuspicioDptoChart"></canvas>
+                </div>
             </div>
-            <div class="chart">
-                <canvas id="salidasChart"></canvas>
+            <div class="chart-container">
+                <div class="chart">
+                    <canvas id="tipoAuspicioPaisChart"></canvas>
+                </div>
             </div>
         </div>
+        
     </div>
 
     <div class="tab-content" id="apoyo">
         <h2>Dashboard de Apoyo Económico</h2>
         <div class="chart-container">
-            <div class="chart">
-                <canvas id="apoyoChart"></canvas>
-            </div>
-            <div class="chart">
-                <canvas id="apoyoChart"></canvas>
-            </div>
+            
         </div>
     </div>
-    <script src="script.js"></script>
+    <script src="scriptcopy.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+      const buttons = document.querySelectorAll(".tab-button");
+      const contents = document.querySelectorAll(".tab-content");
+    
+      buttons.forEach(button => {
+        button.addEventListener("click", function () {
+          // Quitar la clase 'active' de todos los botones y contenidos
+          buttons.forEach(btn => btn.classList.remove("active"));
+          contents.forEach(content => content.classList.remove("active"));
+    
+          // Activar la pestaña seleccionada
+          this.classList.add("active");
+          document.getElementById(this.dataset.tab).classList.add("active");
+        });
+      });
+    });
+    
+    </script>
 </body>
-
 </html>

@@ -284,6 +284,112 @@ new Chart(document.getElementById('salidasChart'), {
   plugins: [ChartDataLabels]
 });
 
+// 1. Filtrar para conservar solo registros donde "Tipo de Auspicio" es "AUSPICIO" o "SOLO INSCRIPCION"
+const filteredSalidas = salidas.filter(item => {
+  const tipo = item["Tipo de Auspicio"];
+  return tipo === "AUSPICIO" || tipo === "SOLO INSCRIPCION";
+});
+
+// 2. Agrupar los registros por "Facultad" y contar cada tipo de auspicio
+const groupedData = {};
+filteredSalidas.forEach(item => {
+  const facultad = item["Facultad"];
+  const tipo = item["Tipo de Auspicio"];
+  if (!groupedData[facultad]) {
+    groupedData[facultad] = { "AUSPICIO": 0, "SOLO INSCRIPCION": 0 };
+  }
+  groupedData[facultad][tipo]++;  // Incrementa el contador para el tipo respectivo
+});
+
+// 3. Extraer arrays de etiquetas y de datos para cada tipo de auspicio
+const facLabels = Object.keys(groupedData);
+const auspicioCounts = facLabels.map(fac => groupedData[fac]["AUSPICIO"] || 0);
+const soloInscripcionCounts = facLabels.map(fac => groupedData[fac]["SOLO INSCRIPCION"] || 0);
+
+// 4. Verificar si alguno de los datasets está completamente vacío (todos 0)
+const isAuspicioEmpty = auspicioCounts.every(count => count === 0);
+const isSoloEmpty = soloInscripcionCounts.every(count => count === 0);
+
+// 5. Condicionar la inclusión de datasets
+const datasets = [];
+if (!isAuspicioEmpty) {
+  datasets.push({
+    label: 'AUSPICIO',
+    data: auspicioCounts,
+    backgroundColor: 'rgba(54, 162, 235, 0.2)',
+    borderColor: 'rgba(54, 162, 235, 1)',
+    borderWidth: 1
+  });
+}
+if (!isSoloEmpty) {
+  datasets.push({
+    label: 'SOLO INSCRIPCION',
+    data: soloInscripcionCounts,
+    backgroundColor: 'rgba(255, 159, 64, 0.2)',
+    borderColor: 'rgba(255, 159, 64, 1)',
+    borderWidth: 1
+  });
+}
+
+// 6. Crear el gráfico de barras agrupado
+new Chart(document.getElementById('tipoDeAuspicioChart'), {
+  type: 'bar',
+  data: {
+    labels: facLabels,  // Facultades en el eje X
+    datasets: datasets  // Solo se incluyen los datasets que tienen información
+  },
+  options: {
+    responsive: true,
+    plugins: {
+      title: {
+        display: true,
+        text: 'Tipo de Auspicio vs. Facultad',
+        font: { size: 16 },
+        padding: { top: 20 }
+      },
+      legend: {
+        display: true
+      },
+      datalabels: {
+        color: 'black',
+        anchor: 'end',
+        align: 'top',
+        formatter: (value) => value
+      }
+    },
+    scales: {
+      x: {
+        ticks: {
+          callback: function (value, index, ticks) {
+            // Accede al label original usando el índice
+            let label = facLabels[index];
+            label = label.replace(/FACULTAD DE\s*/gi, '').trim();
+            // Si el label es muy largo, lo trunca
+            return label && label.length > 20 ? label.substring(0, 20) + "..." : label;
+          },
+          minRotation: 25
+        },
+        title: {
+          display: true,
+          text: 'Facultad',
+          font: { weight: 'bold' }
+        }
+      },
+      y: {
+        title: {
+          display: true,
+          text: 'Número de Salidas',
+          font: { weight: 'bold' }
+        },
+        ticks: {
+          beginAtZero: true,
+          stepSize: 1
+        }
+      }
+    }
+  },
+  plugins: [ChartDataLabels]  // Asegúrate de que el plugin de Data Labels esté cargado
+});
 /**********************************APOYO******************************************** */
 // 3. Apoyo Económico: contar por "Facultad" (o cambiar la clave según se requiera)
 const apoyo = data.apoyo;
@@ -333,28 +439,45 @@ new Chart(document.getElementById('apoyoChart'), {
   plugins: [ChartDataLabels]
 });  
 })
+/*****************************FUNCIONES********************************** */
+
   .catch(error => console.error('Error al obtener los datos:', error));
-
-// Función para contar ocurrencias de una propiedad
-function countBy2(array, key) {
-  return array.reduce(function (result, item) {
-    if (!result[item[key]]) {
-      result[item[key]] = 0; // Si no existe la clave, inicializa en 0
-    }
-    result[item[key]]++; // Incrementa el conteo correctamente
-    return result;
-  }, {});
-}
-
-// Función para contar ocurrencias en un array de objetos según una clave
-function countBy(arr, key) {
-  return arr.reduce((acc, obj) => {
-    let prop = obj[key];
-    if (prop) {
-      acc[prop] = (acc[prop] || 0) + 1;
+  /**
+   * countBy(data, key):
+   * Agrupa un array de objetos contando la ocurrencia de cada valor en la propiedad "key".
+   * Retorna un objeto con { [valor]: count }.
+   */
+function countBy(data, key) {
+  return data.reduce((acc, obj) => {
+    const val = obj[key];
+    if (val) {
+      acc[val] = (acc[val] || 0) + 1;
     }
     return acc;
   }, {});
+}
+
+// Variables globales para almacenar los datos originales y la instancia del gráfico
+let originalSalidas = [];
+let salidasChartInstance = null;
+
+// Función para agrupar los datos filtrados por "Facultad"
+function groupByFacultad(data) {
+  return data.reduce((acc, item) => {
+    const fac = item["Facultad"];
+    if (fac) {
+      acc[fac] = (acc[fac] || 0) + 1;
+    }
+    return acc;
+  }, {});
+}
+
+/**
+     * filterByKey(data, key, value):
+     * Filtra el array dejando solo los objetos donde obj[key] === value.
+     */
+function filterByKey(data, key, value) {
+  return data.filter(item => item[key] === value);
 }
 
 // Función para transformar y ordenar los datos
