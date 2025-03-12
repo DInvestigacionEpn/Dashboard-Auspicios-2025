@@ -1,104 +1,153 @@
 body {
-    font-family: Arial, sans-serif;
-    margin: 0;
-    padding: 20px 40px;
-    text-align: center;
-    background-color: #dedcdc;
-    filter: none !important; /* Evita cambios de brillo/saturación */
-    backdrop-filter: none !important; /* Evita efectos de desenfoque */
-  }
-  h2 {
-    color: #333;
-    padding-top: 10px;
-  }
-  .chart-container{
-    display: flex;
-    gap: 40px;
-    flex-wrap: wrap;
-    justify-content: center;
-    align-items: center;
-  }
-  .chart{
-    /*max-width: 50%; /* Máximo tamaño del gráfico */
-    margin: 20px auto; /* Centrar los gráficos */
-    background: #fff;
-    padding: 15px;
-    border-radius: 10px;
-    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
-    flex: 1 1 45%;
-    box-sizing: border-box;
-    height: auto;
-  }
-  canvas {
-    width: 100% !important;
-    height: auto !important;
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 20px 40px;
+  text-align: center;
+  background-color: #dedcdc;
+  filter: none !important;
+  /* Evita cambios de brillo/saturación */
+  backdrop-filter: none !important;
+  /* Evita efectos de desenfoque */
+}
+
+h2 {
+  color: #333;
+  padding-top: 10px;
+}
+
+.descarga {
+  justify-content: right;
+  display: flex;
+  gap: 20px;
+}
+
+.button.descarga {
+  bottom: 10px;
+  /* Ajusta según el espacio que desees */
+  right: 10px;
+  z-index: 10;
+  padding: 5px 10px;
+  font-size: 14px;
+  background-color: none;
+  color: #30b300;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.chart-container {
+  display: flex;
+  gap: 40px;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+}
+
+.chart {
+  /*max-width: 50%; /* Máximo tamaño del gráfico */
+  margin: 20px auto;
+  /* Centrar los gráficos */
+  background: #fff;
+  padding: 15px;
+  border-radius: 10px;
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+  flex: 1 1 45%;
+  box-sizing: border-box;
+  height: auto;
+  position: relative;
+}
+
+canvas {
+  width: 100% !important;
+  height: auto !important;
+}
+
+.download-btn {
+  position: absolute;
+  bottom: 10px;
+  /* Ajusta según el espacio que desees */
+  right: 10px;
+  z-index: 10;
+  padding: 5px 10px;
+  font-size: 14px;
+  background-color: #1b5f2c;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.download-btn:hover {
+  background-color: #30b300;
+}
+
+.tabs {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.tab-button {
+  background-color: #ffff;
+  border: none;
+  padding: 10px 20px;
+  cursor: pointer;
+  font-size: 16px;
+  border-radius: 16px;
+}
+
+.tab-button.active {
+  background-color: #4CAF50;
+  color: white;
+  font-weight: bold;
+}
+
+.sub-tabs {
+  display: flex;
+  margin-bottom: 20px;
+  justify-content: center;
+}
+
+.sub-tab-button {
+  padding: 8px 16px;
+  border: none;
+  cursor: pointer;
+  background: #ffff;
+  font-size: 16px;
+}
+
+.borderleft {
+  border-radius: 16px 0px 0px 16px;
+}
+
+.borderrigth {
+  border-radius: 0px 16px 16px 0px;
+}
+
+.sub-tab-button.active {
+  background: #2e6330;
+  color: white;
+  font-weight: bold;
+}
+
+#globalFilterContainer {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+#globalFilter {
+  padding: 8px 12px;
+  font-size: 16px;
+  border-radius: 20px;
+}
+
+@media (max-width: 1008px) {
+  .chart-container {
+    flex-direction: column;
   }
 
-  .tabs {
-    display: flex;
-    justify-content: center;
-    margin-bottom: 20px;
+  .chart {
+    flex: 1 1 100%;
+    height: 250px;
   }
-  
-  .tab-button {
-    background-color: #ffff;
-    border: none;
-    padding: 10px 20px;
-    cursor: pointer;
-    font-size: 16px;
-    border-radius: 16px;
-  }
-  
-  .tab-button.active {
-    background-color: #4CAF50;
-    color: white;
-    font-weight: bold;
-  }
-  
-  .sub-tabs {
-    display: flex;
-    margin-bottom: 20px;
-    justify-content: center;
-  }
-  
-  .sub-tab-button {
-    padding: 8px 16px;
-    border: none;
-    cursor: pointer;
-    background: #ffff;
-    font-size: 16px;
-  }
-
-  .borderleft{
-    border-radius: 16px 0px 0px 16px;
-  }
-
-  .borderrigth{
-    border-radius: 0px 16px 16px 0px;
-  }
-  
-  .sub-tab-button.active {
-    background: #2e6330;
-    color: white;
-    font-weight: bold;
-  }
-
-  #globalFilterContainer {
-    text-align: center;
-    margin-bottom: 20px;
-  }
-  #globalFilter {
-    padding: 8px 12px;
-    font-size: 16px;
-    border-radius: 20px;
-  }
-
-  @media (max-width: 1008px) {
-    .chart-container {
-      flex-direction: column;
-    }
-    .chart {
-      flex: 1 1 100%;
-      height: 250px;
-    }
-  }
+}

@@ -8,6 +8,9 @@
     <link rel="stylesheet" href="styles.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script>
 </head>
 
 <body>
@@ -22,22 +25,30 @@
         <button class="sub-tab-button" data-section="salidas">Salidas</button>
         <button class="sub-tab-button borderrigth" data-section="apoyo">Apoyo Económico</button>
     </div>
+    
+
     <!-- Contenedor principal de contenido -->
   <div id="content-container">
     <!-- Dashboard de Publicaciones -->
     <div id="publicaciones" class="sub-tabcontent">
       <h2>Dashboard de Publicaciones</h2>
+      <div class="descarga">
+        <button class="button descarga" onclick="downloadSectionAsPDF('publicaciones', 'Dashboard_Publicaciones')">Descargar PDF</button>
+      </div>
       <div class="chart-container">
         <div class="chart">
           <canvas id="facultadChart"></canvas>
+          <button class="download-btn" onclick="downloadChart('facultadChart', 'Auspicios_por_Facultad')">Descargar</button>
         </div>
         <div class="chart">
           <canvas id="departamentoChart"></canvas>
+          <button class="download-btn" onclick="downloadChart('departamentoChart', 'Auspicios_por_Departamento')">Descargar</button>
         </div>
       </div>
       <div class="chart-container">
         <div class="chart">
           <canvas id="cuartilesChart"></canvas>
+          <button class="download-btn" onclick="downloadChart('cuartilesChart', 'Auspicios_por_Q1_Q2')">Descargar</button>
         </div>
       </div>
     </div>
@@ -45,6 +56,9 @@
     <!-- Dashboard de Salidas -->
     <div id="salidas" class="sub-tabcontent" style="display:none;">
       <h2>Dashboard de Salidas al Exterior e Inscripciones</h2>
+      <div class="descarga">
+        <button class="button descarga" onclick="downloadSectionAsPDF('salidas', 'Dashboard_Salidas')">Descargar PDF</button>
+      </div>
       <div id="globalFilterContainer">
         <label for="globalFilter">Filtrar por Tipo de Auspicio: </label>
         <select id="globalFilter">
@@ -56,14 +70,17 @@
       <div class="chart-container">
         <div class="chart">
           <canvas id="tipoAuspicioFacultadChart"></canvas>
+          <button class="download-btn" onclick="downloadChart('tipoAuspicioFacultadChart', 'Salidas_por_facultad')">Descargar</button>
         </div>
         <div class="chart">
           <canvas id="tipoAuspicioDptoChart"></canvas>
+          <button class="download-btn" onclick="downloadChart('tipoAuspicioDptoChart', 'Salidas_por_departamento')">Descargar</button>
         </div>
       </div>
       <div class="chart-container">
         <div class="chart">
           <canvas id="tipoAuspicioPaisChart"></canvas>
+          <button class="download-btn" onclick="downloadChart('cuartitipoAuspicioPaisChartlesChart', 'Salidas_por_pais')">Descargar</button>
         </div>
       </div>
     </div>
@@ -71,15 +88,15 @@
     <!-- Dashboard de Apoyo Económico -->
     <div id="apoyo" class="sub-tabcontent" style="display:none;">
       <h2>Dashboard de Apoyo Económico</h2>
+      <div class="descarga">
+        <button class="button descarga" onclick="downloadSectionAsPDF('apoyo', 'Dashboard_Apoyo_Economico')">Descargar PDF</button>
+      </div>
       <div class="chart-container">
         
       </div>
     </div>
   </div>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
-
-    <script src="scriptcopycopy.js"></script>
+    <script src="script.js"></script>
 </body>
 
 </html>
