@@ -12,79 +12,74 @@
 
 <body>
     <div class="tabs">
-        <button class="tab-button active" data-tab="publicaciones">Publicaciones</button>
-        <button class="tab-button" data-tab="salidas">Salidas al Exterior</button>
-        <button class="tab-button" data-tab="apoyo">Apoyo Económico</button>
+        <button class="tab-button active" data-year="2024">Año 2024</button>
+        <button class="tab-button" data-year="2025">Año 2025</button>
     </div>
 
-    <div class="tab-content active" id="publicaciones">
-        <h2>Dashboard de Publicaciones</h2>
-        <div class="chart-container">
-            <div class="chart">
-                <canvas id="facultadChart"></canvas>
-            </div>
-            <div class="chart">
-                <canvas id="departamentoChart"></canvas>
-            </div>
+    <!-- Pestañas secundarias para secciones -->
+    <div class="sub-tabs">
+        <button class="sub-tab-button active borderleft" data-section="publicaciones">Publicaciones</button>
+        <button class="sub-tab-button" data-section="salidas">Salidas</button>
+        <button class="sub-tab-button borderrigth" data-section="apoyo">Apoyo Económico</button>
+    </div>
+    <!-- Contenedor principal de contenido -->
+  <div id="content-container">
+    <!-- Dashboard de Publicaciones -->
+    <div id="publicaciones" class="sub-tabcontent">
+      <h2>Dashboard de Publicaciones</h2>
+      <div class="chart-container">
+        <div class="chart">
+          <canvas id="facultadChart"></canvas>
         </div>
-        <div class="chart-container">
-            <div class="chart">
-                <canvas id="cuartilesChart"></canvas>
-            </div>
+        <div class="chart">
+          <canvas id="departamentoChart"></canvas>
         </div>
+      </div>
+      <div class="chart-container">
+        <div class="chart">
+          <canvas id="cuartilesChart"></canvas>
+        </div>
+      </div>
     </div>
 
-    <div class="tab-content" id="salidas">
-        <h2>Dashboard de Salidas al Exterior e Inscripciones</h2>
-        <div id="globalFilterContainer">
-            <label for="globalFilter">Filtrar por Tipo de Auspicio: </label>
-            <select id="globalFilter" >
-              <option value="todos">Todos</option>
-              <option value="AUSPICIO">Auspicio</option>
-              <option value="SOLO INSCRIPCION">Solo Inscripción</option>
-            </select>
-            <div class="chart-container">
-                <div class="chart">
-                    <canvas id="tipoAuspicioFacultadChart"></canvas>
-                </div>
-                <div class="chart">
-                    <canvas id="tipoAuspicioDptoChart"></canvas>
-                </div>
-            </div>
-            <div class="chart-container">
-                <div class="chart">
-                    <canvas id="tipoAuspicioPaisChart"></canvas>
-                </div>
-            </div>
+    <!-- Dashboard de Salidas -->
+    <div id="salidas" class="sub-tabcontent" style="display:none;">
+      <h2>Dashboard de Salidas al Exterior e Inscripciones</h2>
+      <div id="globalFilterContainer">
+        <label for="globalFilter">Filtrar por Tipo de Auspicio: </label>
+        <select id="globalFilter">
+          <option value="todos">Todos</option>
+          <option value="AUSPICIO">Auspicio</option>
+          <option value="SOLO INSCRIPCION">Solo Inscripción</option>
+        </select>
+      </div>
+      <div class="chart-container">
+        <div class="chart">
+          <canvas id="tipoAuspicioFacultadChart"></canvas>
         </div>
+        <div class="chart">
+          <canvas id="tipoAuspicioDptoChart"></canvas>
+        </div>
+      </div>
+      <div class="chart-container">
+        <div class="chart">
+          <canvas id="tipoAuspicioPaisChart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- Dashboard de Apoyo Económico -->
+    <div id="apoyo" class="sub-tabcontent" style="display:none;">
+      <h2>Dashboard de Apoyo Económico</h2>
+      <div class="chart-container">
         
+      </div>
     </div>
+  </div>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
 
-    <div class="tab-content" id="apoyo">
-        <h2>Dashboard de Apoyo Económico</h2>
-        <div class="chart-container">
-            
-        </div>
-    </div>
-    <script src="scriptcopy.js"></script>
-    <script>
-        document.addEventListener("DOMContentLoaded", function () {
-      const buttons = document.querySelectorAll(".tab-button");
-      const contents = document.querySelectorAll(".tab-content");
-    
-      buttons.forEach(button => {
-        button.addEventListener("click", function () {
-          // Quitar la clase 'active' de todos los botones y contenidos
-          buttons.forEach(btn => btn.classList.remove("active"));
-          contents.forEach(content => content.classList.remove("active"));
-    
-          // Activar la pestaña seleccionada
-          this.classList.add("active");
-          document.getElementById(this.dataset.tab).classList.add("active");
-        });
-      });
-    });
-    
-    </script>
+    <script src="scriptcopycopy.js"></script>
 </body>
+
 </html>

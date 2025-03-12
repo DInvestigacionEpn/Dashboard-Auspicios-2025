@@ -18,6 +18,24 @@ const facultadAbreviaturas = {
   "DEPARTAMENTO DE FORMACIÓN BÁSICA": "DFB"
   // Agrega aquí las demás facultades que necesites
 };
+
+let allData = {}; // Almacena los datos de ambos años
+let selectedYear = "2024"; // Año por defecto
+let selectedSection = "publicaciones"; // Sección por defecto
+
+document.addEventListener("DOMContentLoaded", function () {
+  fetchData();
+
+  // Evento para cambiar de año
+  document.querySelectorAll(".tab-button").forEach(button => {
+    button.addEventListener("click", function () {
+      document.querySelectorAll(".tab-button").forEach(btn => btn.classList.remove("active"));
+      this.classList.add("active");
+
+      selectedYear = this.getAttribute("data-year");
+      updateCharts();
+    });
+  });
 // URL de la API (reemplaza por la tuya)
 const API_URL = 'https://script.google.com/macros/s/AKfycbw2YLz63oPa35m2yal4gMdpUwMd6ls5q9PYLG3XBnj7nY6aQC90oayNaKMkrTcO8dPl/exec';
 // Cargar datos y renderizar gráficos individualmente
@@ -52,8 +70,7 @@ fetchAPI(API_URL)
       labels: departamentoLabels,
       values: departamentoValues,
       backgroundColor: 'rgba(153, 102, 255, 0.2)',
-      borderColor: 'rgba(153, 102, 255, 1)',
-      borderWidth: 1,
+      borderColor: 'rgb(175, 73, 252)',
       rotation: 0
     });
 
@@ -302,9 +319,9 @@ function renderBarChart(canvasId, config) {
             callback: function (value, index, ticks) {
               // Accede al label original usando el índice
               let label = config.labels[index];
-              label = label.trim().toUpperCase();
+              label = label.replace(/FACULTAD DE\s*/gi, '').trim();
               // Si el label es muy largo, lo trunca
-              return facultadAbreviaturas[label] || label;
+              return label && label.length > 20 ? label.substring(0, 20) + "..." : label;
             },
             minRotation: config.rotation
           },
