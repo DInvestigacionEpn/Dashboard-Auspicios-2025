@@ -78,27 +78,54 @@ function setupGlobalFilter() {
 
 // Actualiza el contenido (muestra la sección y renderiza los gráficos) según el año y la sección seleccionados
 function updateContent() {
-  // Mostrar solo la sección correspondiente
+  // Ocultar todas las secciones
   document.querySelectorAll(".sub-tabcontent").forEach(div => {
     div.style.display = "none";
   });
-  document.getElementById(selectedSection).style.display = "block";
 
-  const data = allData[selectedYear];
-  if (!data || !data[selectedSection]) {
-    console.error("No hay datos para:", selectedYear, selectedSection);
+  // Mostrar la sección seleccionada
+  const sectionElement = document.getElementById(selectedSection);
+  if (!sectionElement) {
+    console.error("Sección no encontrada:", selectedSection);
+    return;
+  }
+  sectionElement.style.display = "block";
+
+  // Obtener los datos del año y la sección seleccionados
+  let data = allData[selectedYear]?.[selectedSection];
+
+  // Asegurar que `data` sea un array para evitar errores en `.reduce()`
+  if (!Array.isArray(data)) {
+    console.warn(`No hay datos disponibles para ${selectedSection} en ${selectedYear}`);
+    sectionElement.innerHTML = "<p>No hay datos disponibles.</p>";
     return;
   }
 
-  // Según la sección, se llaman a las funciones de renderizado correspondientes
+  // Limpiar gráficos antes de renderizar nuevos
+  clearCharts();
+
+  // Llamar a la función correspondiente según la sección
   if (selectedSection === "publicaciones") {
-    renderPublicacionesCharts(data.publicaciones);
+    renderPublicacionesCharts(data);
   } else if (selectedSection === "salidas") {
-    renderSalidasCharts(data.salidas);
+    renderSalidasCharts(data);
   } else if (selectedSection === "apoyo") {
-    renderApoyoCharts(data.apoyo);
+    renderApoyoCharts(data);
+  } else {
+    console.error("Sección no reconocida:", selectedSection);
   }
 }
+
+// Función para limpiar los gráficos antes de actualizar
+function clearCharts() {
+  document.querySelectorAll("canvas").forEach(canvas => {
+    const ctx = canvas.getContext("2d");
+    if (ctx) {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+  });
+}
+
 
 // ====================
 // Renderización de gráficos para cada sección
@@ -147,6 +174,19 @@ function renderPublicacionesCharts(publicaciones) {
     borderColor: ['rgba(255, 159, 64, 1)', 'rgba(75, 192, 192, 1)'],
     rotation: 0,
     datasetLabel: 'Artículos en Cuartiles'
+  });
+
+  const genderGroup = transformAndSortData(publicaciones, "Género", value => value.trim().toUpperCase());
+  renderBarChart("generoChart", {
+    title: 'Publicaciones por Género',
+    xTitle: 'Género',
+    yTitle: 'Número de Auspicios',
+    labels: ['Masculino', 'Femenino'],
+    values: genderGroup.values,
+    backgroundColor: ['rgba(64, 137, 255, 0.2)', 'rgba(192, 75, 169, 0.21)'],
+    borderColor: ['rgb(67, 110, 254)', 'rgb(192, 43, 159)'],
+    rotation: 0,
+    datasetLabel: 'Publicaciones'
   });
 }
 
@@ -271,6 +311,21 @@ function groupByKey(data, key, normalizeFn) {
 function filterByKey(data, key, value) {
   return data.filter(item => item[key] === value);
 }
+
+// Función para contar por género (M/F)
+function countByGender(data) {
+  const genderCount = { M: 0, F: 0 };
+
+  data.forEach(item => {
+    const gender = item["Género"];  // Asegúrate que el campo se llama "Género"
+    if (gender === "M" || gender === "F") {
+      genderCount[gender]++;
+    }
+  });
+
+  return genderCount;
+}
+
 // Función para cambiar de año
 function changeYear(year) {
   selectedYear = year;
