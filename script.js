@@ -33,7 +33,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
 // Cargar datos desde el Apps Script
 function fetchData() {
-  fetch("https://script.google.com/macros/s/AKfycbzVk9KCtqXClMZxR4-R-6lFsk5pvcV0jbtYjEnglJClOGeRY3kLytfwQ43vWy48c85V/exec/exec?token=,u.>{!UmjDm<VK0r*9.S?QlGHkNHC|,d|FQ_uO+0AH{#HQTR(Rv))TF0DGiiw]v;v_6P6.s<c>e}9e[*z0<JQPV6.):ookp.c5u&.clR-x7ELz,WE-BSzcMK;Spub^=C!gy8RZUM}ZAXdXh}|zo,Kke2!Qyqc%3WVsI,,.LpTGM(Xd7nhoRpHQA7{TVy=fmvCk:bRjT98ubSw]0}YrnM41j*MMy[]U5s;i7Lr;)a5R452wzJ6>|)wQrVGN?f#?1R$s>m!ZX%C57Gyv4%gYGh&{YR.!s.Qv4V*yq3WsAwK3lBu8O&]+IWqGY|J#x8{:E(oASc6cbX![]OY*uXuc[=n4kXQM*<&EzH>%IPjNyg)H4M8*P<.rqx1Lp(yW5f6WOIfADE:hN$4^r;!fbVUqqG4!1wC!q%YQQE-MtA{X.{@NM6GIw0SebF[4702%^.RDZJAxj]iXn=!fyQ,3ws]?(Z9,:l|d%cS$[}I6<od8<Zcbfp<+9=m%7f9@nT^(MFIfL-")
+  fetch("https://script.google.com/macros/s/AKfycbzVk9KCtqXClMZxR4-R-6lFsk5pvcV0jbtYjEnglJClOGeRY3kLytfwQ43vWy48c85V/exec/exec)
     .then(response => response.json())
     .then(data => {
       allData = data;  // Se espera que el JSON tenga { "2024": { publicaciones: [...], salidas: [...], apoyo: [...] }, "2025": { ... } }
