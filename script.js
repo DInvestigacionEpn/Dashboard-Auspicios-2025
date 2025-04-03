@@ -33,7 +33,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
 // Cargar datos desde el Apps Script
 function fetchData() {
-  fetch("https://script.google.com/macros/s/AKfycbzVk9KCtqXClMZxR4-R-6lFsk5pvcV0jbtYjEnglJClOGeRY3kLytfwQ43vWy48c85V/exec") // Reemplaza con la URL real de tu Apps Script
+  fetch("https://script.google.com/macros/s/AKfycbzJnLjdlIyvyECbjt6zosXQM_i8t0SyDZmvnH23XOHCwj9Av_etUKEh_fz7f8Nzqft5/exec") // Reemplaza con la URL real de tu Apps Script
     .then(response => response.json())
     .then(data => {
       allData = data;  // Se espera que el JSON tenga { "2024": { publicaciones: [...], salidas: [...], apoyo: [...] }, "2025": { ... } }
