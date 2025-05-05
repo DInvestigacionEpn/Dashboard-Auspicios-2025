@@ -33,10 +33,19 @@ document.addEventListener("DOMContentLoaded", function () {
 
 // Cargar datos desde el Apps Script
 function fetchData() {
-  fetch("https://script.google.com/macros/s/AKfycbzVk9KCtqXClMZxR4-R-6lFsk5pvcV0jbtYjEnglJClOGeRY3kLytfwQ43vWy48c85V/exec") // Reemplaza con la URL real de tu Apps Script
+  fetch("https://script.google.com/macros/s/AKfycbzVk9KCtqXClMZxR4-R-6lFsk5pvcV0jbtYjEnglJClOGeRY3kLytfwQ43vWy48c85V/exec")
     .then(response => response.json())
     .then(data => {
-      allData = data;  // Se espera que el JSON tenga { "2024": { publicaciones: [...], salidas: [...], apoyo: [...] }, "2025": { ... } }
+      // Filtrar publicaciones con "SI" en la aprobación
+      Object.keys(data).forEach(anio => {
+        if (data[anio].publicaciones) {
+          data[anio].publicaciones = data[anio].publicaciones.filter(pub =>
+            pub["Aprobación"]?.toString().trim().toUpperCase() === "SI"
+          );
+        }
+      });
+
+      allData = data;
       updateContent();
     })
     .catch(error => console.error("Error al cargar los datos:", error));
