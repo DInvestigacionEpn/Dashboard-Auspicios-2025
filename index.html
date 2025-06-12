@@ -2,105 +2,225 @@
 <html lang="es">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard</title>
-    <link rel="stylesheet" href="styles.css">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard</title>
+  <link rel="stylesheet" href="styles.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script>
 </head>
 
 <body>
-    <div class="tabs">
-        <button class="tab-button active" data-year="2024">Año 2024</button>
-        <button class="tab-button" data-year="2025">Año 2025</button>
-    </div>
-
-    <!-- Pestañas secundarias para secciones -->
-    <div class="sub-tabs">
-        <button class="sub-tab-button active borderleft" data-section="publicaciones">Publicaciones</button>
-        <button class="sub-tab-button" data-section="salidas">Salidas</button>
-        <button class="sub-tab-button borderrigth" data-section="apoyo">Apoyo Económico</button>
-    </div>
-    
-
-    <!-- Contenedor principal de contenido -->
+  <div class="tabs">
+    <button class="tab-button active" data-year="2024">Año 2024</button>
+    <button class="tab-button" data-year="2025">Año 2025</button>
+  </div>
+  <!-- Pestañas secundarias para secciones -->
+  <div id="subTabs" class="sub-tabs"></div>
+  <!-- Contenedor principal de contenido -->
   <div id="content-container">
     <!-- Dashboard de Publicaciones -->
     <div id="publicaciones" class="sub-tabcontent">
       <h2>Dashboard de Publicaciones</h2>
       <div class="descarga">
-        <button class="button descarga" onclick="downloadSectionAsPDF('publicaciones', 'Dashboard_Publicaciones')">Descargar PDF</button>
+        <button class="button descarga" onclick="downloadSectionAsPDF('publicaciones', 'Dashboard_Publicaciones')">
+          Descargar PDF
+        </button>
       </div>
       <div class="chart-container">
         <div class="chart">
-          <canvas id="facultadChart"></canvas>
-          <button class="download-btn" onclick="downloadChart('facultadChart', 'Auspicios_por_Facultad')">Descargar</button>
+          <canvas id="publicacionesFacultadChart"></canvas>
+          <button class="download-btn" onclick="downloadChart('publicacionesFacultadChart', 'Auspicios_por_Facultad')">
+            Descargar
+          </button>
         </div>
         <div class="chart">
-          <canvas id="departamentoChart"></canvas>
-          <button class="download-btn" onclick="downloadChart('departamentoChart', 'Auspicios_por_Departamento')">Descargar</button>
+          <canvas id="publicacionesDepartamentoChart"></canvas>
+          <button class="download-btn"
+            onclick="downloadChart('publicacionesDepartamentoChart', 'Auspicios_por_Departamento')">
+            Descargar
+          </button>
         </div>
       </div>
       <div class="chart-container">
         <div class="chart">
-          <canvas id="generoChart"></canvas>
-          <button class="download-btn" onclick="downloadChart('generoChart', 'Auspicios_por_genero')">Descargar</button>
+          <canvas id="publicacionesCuartilesChart"></canvas>
+          <button class="download-btn" onclick="downloadChart('publicacionesCuartilesChart', 'Auspicios_por_Q1_Q2')">
+            Descargar
+          </button>
         </div>
         <div class="chart">
-          <canvas id="cuartilesChart"></canvas>
-          <button class="download-btn" onclick="downloadChart('cuartilesChart', 'Auspicios_por_Q1_Q2')">Descargar</button>
+          <canvas id="publicacionesGeneroChart"></canvas>
+          <button class="download-btn" onclick="downloadChart('publicacionesGeneroChart', 'Auspicios_por_genero')">
+            Descargar
+          </button>
         </div>
       </div>
     </div>
 
-    <!-- Dashboard de Salidas -->
-    <div id="salidas" class="sub-tabcontent" style="display:none;">
-      <h2>Dashboard de Salidas al Exterior e Inscripciones</h2>
+    <!-- Dashboard de Inscripciones -->
+    <div id="inscripciones" class="sub-tabcontent">
+      <h2>Dashboard de Inscripciones</h2>
       <div class="descarga">
-        <button class="button descarga" onclick="downloadSectionAsPDF('salidas', 'Dashboard_Salidas')">Descargar PDF</button>
-      </div>
-      <div id="globalFilterContainer">
-        <label for="globalFilter">Filtrar por Tipo de Auspicio: </label>
-        <select id="globalFilter">
-          <option value="todos">Todos</option>
-          <option value="AUSPICIO">Auspicio</option>
-          <option value="SOLO INSCRIPCION">Solo Inscripción</option>
-        </select>
+        <button class="button descarga" onclick="downloadSectionAsPDF('inscripciones', 'Dashboard_Inscripciones')">
+          Descargar PDF
+        </button>
       </div>
       <div class="chart-container">
         <div class="chart">
-          <canvas id="tipoAuspicioFacultadChart"></canvas>
-          <button class="download-btn" onclick="downloadChart('tipoAuspicioFacultadChart', 'Salidas_por_facultad')">Descargar</button>
+          <canvas id="inscripcionesFacultadChart"></canvas>
+          <button class="download-btn"
+            onclick="downloadChart('inscripcionesFacultadChart', 'Inscripciones_por_Facultad')">
+            Descargar
+          </button>
         </div>
         <div class="chart">
-          <canvas id="tipoAuspicioDptoChart"></canvas>
-          <button class="download-btn" onclick="downloadChart('tipoAuspicioDptoChart', 'Salidas_por_departamento')">Descargar</button>
+          <canvas id="inscripcionesDptoChart"></canvas>
+          <button class="download-btn"
+            onclick="downloadChart('inscripcionesDptoChart', 'Inscripciones_por_Departamento')">
+            Descargar
+          </button>
         </div>
       </div>
       <div class="chart-container">
         <div class="chart">
-          <canvas id="tipoAuspicioPaisChart"></canvas>
-          <button class="download-btn" onclick="downloadChart('cuartitipoAuspicioPaisChartlesChart', 'Salidas_por_pais')">Descargar</button>
+          <canvas id="inscripcionesTipoChart"></canvas>
+          <button class="download-btn" onclick="downloadChart('inscripcionesTipoChart', 'Inscripciones_Tipo')">
+            Descargar
+          </button>
+        </div>
+        <div class="chart">
+          <canvas id="inscripcionesGeneroChart"></canvas>
+          <button class="download-btn" onclick="downloadChart('inscripcionesGeneroChart', 'Inscripciones_por_genero')">
+            Descargar
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Dashboard de Salidas al Exterior-->
+    <div id="salidas" class="sub-tabcontent" style="display: none">
+      <h2>Dashboard de Salidas al Exterior</h2>
+      <div class="descarga">
+        <button class="button descarga" onclick="downloadSectionAsPDF('salidas', 'Dashboard_Salidas')">
+          Descargar PDF
+        </button>
+      </div>
+      <div class="chart-container">
+        <div class="chart">
+          <canvas id="salidasFacultadChart"></canvas>
+          <button class="download-btn" onclick="downloadChart('salidasFacultadChart', 'Salidas_por_facultad')">
+            Descargar
+          </button>
+        </div>
+        <div class="chart">
+          <canvas id="salidasDptoChart"></canvas>
+          <button class="download-btn" onclick="downloadChart('salidasDptoChart', 'Salidas_por_departamento')">
+            Descargar
+          </button>
+        </div>
+      </div>
+      <div class="chart-container">
+        <div class="chart">
+          <canvas id="salidasPaisChart"></canvas>
+          <button class="download-btn" onclick="downloadChart('salidasPaisChart', 'Salidas_por_pais')">
+            Descargar
+          </button>
+        </div>
+        <div class="chart">
+          <canvas id="salidasGeneroChart"></canvas>
+          <button class="download-btn" onclick="downloadChart('salidasGeneroChart', 'Salidas_por_genero')">
+            Descargar
+          </button>
         </div>
       </div>
     </div>
 
     <!-- Dashboard de Apoyo Económico -->
-    <div id="apoyo" class="sub-tabcontent" style="display:none;">
+    <div id="apoyo" class="sub-tabcontent" style="display: none">
       <h2>Dashboard de Apoyo Económico</h2>
       <div class="descarga">
-        <button class="button descarga" onclick="downloadSectionAsPDF('apoyo', 'Dashboard_Apoyo_Economico')">Descargar PDF</button>
+        <button class="button descarga" onclick="downloadSectionAsPDF('apoyo', 'Dashboard_Apoyo_Economico')">
+          Descargar PDF
+        </button>
       </div>
       <div class="chart-container">
-        
+        <div class="chart">
+          <canvas id="apoyoFacultadChart"></canvas>
+          <button class="download-btn" onclick="downloadChart('apoyoFacultadChart', 'Apoyo_Economico_por_facultad')">
+            Descargar
+          </button>
+        </div>
+        <div class="chart">
+          <canvas id="apoyoDptoChart"></canvas>
+          <button class="download-btn" onclick="downloadChart('apoyoDptoChart', 'Apoyo_Economico_por_departamento')">
+            Descargar
+          </button>
+        </div>
+      </div>
+      <div class="chart-container">
+        <div class="chart">
+          <canvas id="apoyoPaisChart"></canvas>
+          <button class="download-btn" onclick="downloadChart('apoyoPaisChart', 'Apoyo_Economico_por_pais')">
+            Descargar
+          </button>
+        </div>
+        <div class="chart">
+          <canvas id="apoyoGeneroChart"></canvas>
+          <button class="download-btn" onclick="downloadChart('apoyoGeneroChart', 'Apoyo_Economico_por_genero')">
+            Descargar
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Dashboard de Salidas Nacionales -->
+    <div id="salidasNacionales" class="sub-tabcontent">
+      <h2>Dashboard de Salidas Nacionales</h2>
+      <div class="descarga">
+        <button class="button descarga"
+          onclick="downloadSectionAsPDF('salidasNacionales', 'Dashboard_Salidas_Nacionales')">
+          Descargar PDF
+        </button>
+      </div>
+      <div class="chart-container">
+        <div class="chart">
+          <canvas id="salidasNacionalesFacultadChart"></canvas>
+          <button class="download-btn"
+            onclick="downloadChart('salidasNacionalesFacultadChart', 'Salidas_Nacionales_por_Facultad')">
+            Descargar
+          </button>
+        </div>
+        <div class="chart">
+          <canvas id="salidasNacionalesDptoChart"></canvas>
+          <button class="download-btn"
+            onclick="downloadChart('salidasNacionalesDepartamentoChart', 'Salidas_Nacionales_por_Departamento')">
+            Descargar
+          </button>
+        </div>
+      </div>
+      <div class="chart-container">
+        <div class="chart">
+          <canvas id="salidasNacionalesCiudadChart"></canvas>
+          <button class="download-btn"
+            onclick="downloadChart('salidasNacionalesCiudadChart', 'Salidas_Nacionales_por_Ciudad')">
+            Descargar
+          </button>
+        </div>
+        <div class="chart">
+          <canvas id="salidasNacionalesGeneroChart"></canvas>
+          <button class="download-btn"
+            onclick="downloadChart('salidasNacionalesGeneroChart', 'Salidas_Nacionales_por_genero')">
+            Descargar
+          </button>
+        </div>
       </div>
     </div>
   </div>
-    <script src="script.js"></script>
+  <script src="script.js"></script>
 </body>
 
 </html>
