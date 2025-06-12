@@ -15,21 +15,24 @@ const facultadAbreviaturas = {
   "FACULTAD DE INGENIERÍA QUÍMICA Y AGROINDUSTRIA": "FIQA",
   "ESCUELA DE FORMACIÓN DE TECNÓLOGOS": "ESFOT",
   "IG": "IG",
-  "DEPARTAMENTO DE FORMACIÓN BÁSICA": "DFB"
-  // Agrega aquí las demás facultades que necesites
+  "DEPARTAMENTO DE FORMACIÓN BÁSICA": "DFB",
+  "DEPARTAMENTO DE CIENCIAS SOCIALES": "DCS"
 };
 
 // Variables globales para almacenar los datos y la selección actual
-let allData = {}; // Objeto que contendrá los datos estructurados por año
+let allData = {}; // Objeto que tiene los datos estructurados por año
 let selectedYear = "2024";      // Año por defecto
 let selectedSection = "publicaciones";  // Sección por defecto
 
 document.addEventListener("DOMContentLoaded", function () {
   fetchData();
   setupYearTabs();
-  setupSectionTabs();
-  setupGlobalFilter();
 });
+
+const sectionsByYear = {
+  "2024": ["publicaciones", "salidas", "apoyo"],
+  "2025": ["publicaciones", "inscripciones", "salidas", "apoyo", "salidasNacionales"],
+};
 
 // Cargar datos desde el Apps Script
 function fetchData() {
@@ -44,7 +47,6 @@ function fetchData() {
           );
         }
       });
-
       allData = data;
       updateContent();
     })
@@ -53,88 +55,116 @@ function fetchData() {
 
 // Configurar pestañas de año
 function setupYearTabs() {
-  document.querySelectorAll(".tab-button").forEach(button => {
-    button.addEventListener("click", function () {
-      document.querySelectorAll(".tab-button").forEach(btn => btn.classList.remove("active"));
-      this.classList.add("active");
+  document.querySelectorAll(".tab-button").forEach((btn) => {
+    btn.addEventListener("click", function () {
       selectedYear = this.getAttribute("data-year");
-      updateContent();
-    });
-  });
-}
-
-// Configurar pestañas secundarias de secciones
-function setupSectionTabs() {
-  document.querySelectorAll(".sub-tab-button").forEach(button => {
-    button.addEventListener("click", function () {
-      document.querySelectorAll(".sub-tab-button").forEach(btn => btn.classList.remove("active"));
+      document.querySelectorAll(".tab-button").forEach((b) => b.classList.remove("active"));
       this.classList.add("active");
-      selectedSection = this.getAttribute("data-section");
+      selectedSection = null;
       updateContent();
+      // IMPORTANTE
+      renderSubTabs();
     });
   });
+
 }
 
-// Configurar el filtro global en la sección de Salidas
-function setupGlobalFilter() {
-  const globalFilter = document.getElementById("globalFilter");
-  if (globalFilter) {
-    globalFilter.addEventListener("change", function () {
+// 3. Generar y configurar subpestañas
+function renderSubTabs() {
+  const container = document.getElementById("subTabs");
+  container.innerHTML = "";
+  const yearSections = sectionsByYear[selectedYear] || [];
+  console.log("Subsecciones para el año", selectedYear, yearSections); // debug
+  yearSections.forEach(section => {
+    const btn = document.createElement("button");
+    btn.className = "sub-tab-button";
+    btn.setAttribute("data-section", section);
+    const names = {
+      publicaciones: "Publicaciones",
+      salidas: "Salidas al Exterior",
+      apoyo: "Apoyo Económico",
+      inscripciones: "Inscripciones",
+      salidasNacionales: "Salidas Nacionales"
+    };
+    btn.textContent = names[section] || section;
+    btn.addEventListener("click", () => {
+      document.querySelectorAll(".sub-tab-button").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      selectedSection = section;
       updateContent();
     });
+    container.appendChild(btn);
+  });
+  // Si no hay sección seleccionada o es inválida, elige la primera
+  if (!selectedSection || !yearSections.includes(selectedSection)) {
+    selectedSection = yearSections[0];
   }
+  container.querySelector(`[data-section="${selectedSection}"]`)?.classList.add("active");
 }
 
-// Actualiza el contenido (muestra la sección y renderiza los gráficos) según el año y la sección seleccionados
+// 4. Actualizar contenido y gráficos
 function updateContent() {
-  // Ocultar todas las secciones
-  document.querySelectorAll(".sub-tabcontent").forEach(div => {
-    div.style.display = "none";
-  });
-
-  // Mostrar la sección seleccionada
-  const sectionElement = document.getElementById(selectedSection);
-  if (!sectionElement) {
-    console.error("Sección no encontrada:", selectedSection);
-    return;
+  // Generar subpestañas
+  const availableSections = sectionsByYear[selectedYear] || [];
+  if (!selectedSection || !availableSections.includes(selectedSection)) {
+    selectedSection = availableSections[0];  // Primera sección válida
   }
-  sectionElement.style.display = "block";
-
-  // Obtener los datos del año y la sección seleccionados
-  let data = allData[selectedYear]?.[selectedSection];
-
-  // Asegurar que `data` sea un array para evitar errores en `.reduce()`
-  if (!Array.isArray(data)) {
-    console.warn(`No hay datos disponibles para ${selectedSection} en ${selectedYear}`);
-    sectionElement.innerHTML = "<p>No hay datos disponibles.</p>";
-    return;
-  }
-
-  // Limpiar gráficos antes de renderizar nuevos
+  renderSubTabs();
+  // Mostrar solo la sección activa
+  document.querySelectorAll(".sub-tabcontent").forEach(div => div.style.display = "none");
+  const sectionEl = document.getElementById(selectedSection);
+  if (!sectionEl) return console.error("Sección no encontrada:", selectedSection);
+  sectionEl.style.display = "block";
+  // Limpiar mensajes previos
+  sectionEl.querySelectorAll("p.no-data-msg").forEach(p => p.remove());
   clearCharts();
-
-  // Llamar a la función correspondiente según la sección
-  if (selectedSection === "publicaciones") {
-    renderPublicacionesCharts(data);
-  } else if (selectedSection === "salidas") {
-    renderSalidasCharts(data);
-  } else if (selectedSection === "apoyo") {
-    renderApoyoCharts(data);
-  } else {
-    console.error("Sección no reconocida:", selectedSection);
+  // Obtener datos
+  const data = allData[selectedYear]?.[selectedSection];
+  if (!Array.isArray(data) || data.length === 0) {
+    // Mostrar mensaje de no datos, pero sin eliminar el HTML structure
+    sectionEl.querySelectorAll("canvas").forEach(c => c.style.display = "none");
+    const msg = document.createElement("p");
+    msg.textContent = "No hay datos disponibles.";
+    msg.className = "no-data-msg";
+    sectionEl.appendChild(msg);
+    return;
+  }
+  // Asegurar que canvas estén visibles
+  sectionEl.querySelectorAll("canvas").forEach(c => c.style.display = "block");
+  // Llamada a la función de renderizado según sección
+  switch (selectedSection) {
+    case "publicaciones":
+      renderPublicacionesCharts(data);
+      break;
+    case "salidas":
+      renderSalidasCharts(data);
+      break;
+    case "apoyo":
+      renderApoyoCharts(data);
+      break;
+    case "inscripciones":
+      renderInscripcionesCharts(data);
+      break;
+    case "salidasNacionales":
+      renderSalidasNacionalesCharts(data);
+      break;
+    default:
+      console.error("Sección no reconocida:", selectedSection);
   }
 }
 
-// Función para limpiar los gráficos antes de actualizar
 function clearCharts() {
   document.querySelectorAll("canvas").forEach(canvas => {
-    const ctx = canvas.getContext("2d");
-    if (ctx) {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    // Si existe un gráfico de Chart.js asociado, destrúyelo
+    const chart = Chart.getChart(canvas);
+    if (chart) {
+      chart.destroy();
     }
+    // Luego sí limpia el canvas
+    const ctx = canvas.getContext("2d");
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
   });
 }
-
 
 // ====================
 // Renderización de gráficos para cada sección
@@ -144,7 +174,7 @@ function clearCharts() {
 function renderPublicacionesCharts(publicaciones) {
   // Gráfico 1: Auspicios por Facultad
   const pubGroup = transformAndSortData(publicaciones, "Facultad", value => value.trim().toUpperCase());
-  renderBarChart("facultadChart", {
+  renderBarChart("publicacionesFacultadChart", {
     title: 'Publicaciones por Facultad',
     xTitle: 'Facultad',
     yTitle: 'Número de Auspicios',
@@ -158,7 +188,7 @@ function renderPublicacionesCharts(publicaciones) {
 
   // Gráfico 2: Auspicios por Departamento
   const deptGroup = transformAndSortData(publicaciones, "Dpto.", value => value.trim().toUpperCase());
-  renderBarChart("departamentoChart", {
+  renderBarChart("publicacionesDepartamentoChart", {
     title: 'Publicaciones por Departamento',
     xTitle: 'Departamento',
     yTitle: 'Número de Auspicios',
@@ -173,7 +203,7 @@ function renderPublicacionesCharts(publicaciones) {
   // Gráfico 3: Artículos en Cuartiles Q1 y Q2
   const cuartilesQ1Q2 = publicaciones.filter(item => item.Quartil === 'Q1' || item.Quartil === 'Q2');
   const cuartilesCount = transformAndSortData(cuartilesQ1Q2, 'Quartil', value => value.trim().toUpperCase());
-  renderBarChart("cuartilesChart", {
+  renderBarChart("publicacionesCuartilesChart", {
     title: 'Número de Artículos en Q1 y Q2',
     xTitle: 'Cuartil de la Revista',
     yTitle: 'Número de Artículos',
@@ -185,8 +215,9 @@ function renderPublicacionesCharts(publicaciones) {
     datasetLabel: 'Artículos en Cuartiles'
   });
 
+  // Gráfico 4: Auspicios por Género
   const genderGroup = transformAndSortData(publicaciones, "Género", value => value.trim().toUpperCase());
-  renderBarChart("generoChart", {
+  renderBarChart("publicacionesGeneroChart", {
     title: 'Publicaciones por Género',
     xTitle: 'Género',
     yTitle: 'Número de Auspicios',
@@ -199,21 +230,72 @@ function renderPublicacionesCharts(publicaciones) {
   });
 }
 
+// Sección Inscripciones
+function renderInscripcionesCharts(inscripciones) {
+  // Gráfico 1: Auspicios por Facultad
+  const pubGroup = transformAndSortData(inscripciones, "Facultad", value => value.trim().toUpperCase());
+  renderBarChart("inscripcionesFacultadChart", {
+    title: 'Inscripciones por Facultad',
+    xTitle: 'Facultad',
+    yTitle: 'Número de Inscripciones',
+    labels: pubGroup.labels,
+    values: pubGroup.values,
+    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+    borderColor: 'rgba(75, 192, 192, 1)',
+    rotation: 0,
+    datasetLabel: 'Inscripciones'
+  });
+
+  // Gráfico 2: Auspicios por Departamento
+  const deptGroup = transformAndSortData(inscripciones, "Dpto.", value => value.trim().toUpperCase());
+  renderBarChart("inscripcionesDptoChart", {
+    title: 'Inscripciones por Departamento',
+    xTitle: 'Departamento',
+    yTitle: 'Número de Inscripciones',
+    labels: deptGroup.labels,
+    values: deptGroup.values,
+    //backgroundColor: 'rgba(75, 192, 192, 0.2)',
+    //borderColor: 'rgba(75, 192, 192, 1)',
+    rotation: 0,
+    datasetLabel: 'Inscripciones'
+  });
+
+  // Gráfico 3: Auspicios por tipo
+  const tipoGroup = transformAndSortData(inscripciones, 'Tipo de salida', value => value.trim().toUpperCase());
+  console.log(tipoGroup);
+  renderBarChart("inscripcionesTipoChart", {
+    title: 'Tipo de auspicio en Inscripciones',
+    xTitle: 'Tipo de auspicio',
+    yTitle: 'Número de Inscripciones',
+    labels: tipoGroup.labels,
+    values: tipoGroup.values,
+    backgroundColor: ['rgba(255, 159, 64, 0.2)', 'rgba(75, 192, 192, 0.2)'],
+    borderColor: ['rgba(255, 159, 64, 1)', 'rgba(75, 192, 192, 1)'],
+    rotation: 0,
+    datasetLabel: 'Inscripciones'
+  });
+
+  // Gráfico 4: Auspicios por Género
+  const genderGroup = transformAndSortData(inscripciones, "Género", value => value.trim().toUpperCase());
+  renderBarChart("inscripcionesGeneroChart", {
+    title: 'Inscripciones por Género',
+    xTitle: 'Género',
+    yTitle: 'Número de Inscripciones',
+    labels: ['Masculino', 'Femenino'],
+    values: genderGroup.values,
+    backgroundColor: ['rgba(64, 137, 255, 0.2)', 'rgba(192, 75, 169, 0.21)'],
+    borderColor: ['rgb(67, 110, 254)', 'rgb(192, 43, 159)'],
+    rotation: 0,
+    datasetLabel: 'Inscripciones'
+  });
+}
+
 // Sección Salidas
 function renderSalidasCharts(salidas) {
-  // Obtener el valor del filtro global para Tipo de Auspicio
-  const filterValue = document.getElementById("globalFilter").value;
-  let filteredSalidas = salidas;
-  if (filterValue !== "todos") {
-    filteredSalidas = salidas.filter(item =>
-      item["Tipo de Auspicio"] &&
-      item["Tipo de Auspicio"].trim().toUpperCase() === filterValue.toUpperCase()
-    );
-  }
-
+  const filteredSalidas = salidas;
   // Gráfico 1: Salidas por Facultad
   const groupFac = transformAndSortData(filteredSalidas, "Facultad", value => value.trim().toUpperCase());
-  renderBarChart("tipoAuspicioFacultadChart", {
+  renderBarChart("salidasFacultadChart", {
     title: 'Salidas al exterior por Facultad',
     xTitle: 'Facultad',
     yTitle: 'Número de Salidas',
@@ -227,7 +309,7 @@ function renderSalidasCharts(salidas) {
 
   // Gráfico 2: Salidas por Departamento
   const groupDpto = transformAndSortData(filteredSalidas, "Dpto.", value => value.trim().toUpperCase());
-  renderBarChart("tipoAuspicioDptoChart", {
+  renderBarChart("salidasDptoChart", {
     title: 'Salidas al exterior por Departamento',
     xTitle: 'Departamento',
     yTitle: 'Número de Salidas',
@@ -241,8 +323,8 @@ function renderSalidasCharts(salidas) {
 
   // Gráfico 3: Salidas por País
   const groupPais = transformAndSortData(filteredSalidas, "País del evento", value => value.trim().toUpperCase());
-  renderBarChart("tipoAuspicioPaisChart", {
-    title: 'Salidas por País',
+  renderBarChart("salidasPaisChart", {
+    title: 'Salidas al exterior por País',
     xTitle: 'País',
     yTitle: 'Número de Salidas',
     labels: groupPais.labels,
@@ -252,21 +334,136 @@ function renderSalidasCharts(salidas) {
     rotation: 0,
     datasetLabel: 'Salidas'
   });
+
+  // Gráfico 4: Salidas por Género
+  const genderGroup = transformAndSortData(filteredSalidas, "Género", value => value.trim().toUpperCase());
+  renderBarChart("salidasGeneroChart", {
+    title: 'Salidas al exterior por Género',
+    xTitle: 'Género',
+    yTitle: 'Número de Salidas',
+    labels: ['Masculino', 'Femenino'],
+    values: genderGroup.values,
+    backgroundColor: ['rgba(64, 137, 255, 0.2)', 'rgba(192, 75, 169, 0.21)'],
+    borderColor: ['rgb(67, 110, 254)', 'rgb(192, 43, 159)'],
+    rotation: 0,
+    datasetLabel: 'Salidas'
+  });
 }
 
 // Sección Apoyo Económico
 function renderApoyoCharts(apoyo) {
-  const groupApoyo = transformAndSortData(apoyo, "Tipo de Apoyo", value => value.trim().toUpperCase());
-  renderBarChart("apoyoChart", {
-    title: 'Apoyo Económico por Tipo',
-    xTitle: 'Tipo de Apoyo',
+  // Gráfico 1: Apoyo Económico por Facultad
+  const groupApoyo = transformAndSortData(apoyo, "Facultad", value => value.trim().toUpperCase());
+  renderBarChart("apoyoFacultadChart", {
+    title: 'Apoyo Económico por Facultad',
+    xTitle: 'Facultad',
     yTitle: 'Número de Apoyos',
     labels: groupApoyo.labels,
     values: groupApoyo.values,
     backgroundColor: 'rgba(153, 102, 255, 0.2)',
     borderColor: 'rgba(153, 102, 255, 1)',
     rotation: 0,
-    datasetLabel: 'Apoyos'
+    datasetLabel: 'Apoyo Económico'
+  });
+
+  // Gráfico 2: Apoyo Económico por Departamento
+  const groupDpto = transformAndSortData(apoyo, "Dpto.", value => value.trim().toUpperCase());
+  renderBarChart("apoyoDptoChart", {
+    title: 'Apoyo Económico por Departamento',
+    xTitle: 'Departamento',
+    yTitle: 'Número de Apoyos',
+    labels: groupDpto.labels,
+    values: groupDpto.values,
+    backgroundColor: 'rgba(67, 64, 255, 0.2)',
+    borderColor: 'rgb(93, 64, 255)',
+    rotation: 0,
+    datasetLabel: 'Apoyo Económico'
+  });
+
+  // Gráfico 3: Apoyo Económico por País
+  const groupPais = transformAndSortData(apoyo, "País del evento", value => value.trim().toUpperCase());
+  renderBarChart("apoyoPaisChart", {
+    title: 'Apoyo Económico por País',
+    xTitle: 'País',
+    yTitle: 'Número de Apoyos',
+    labels: groupPais.labels,
+    values: groupPais.values,
+    //backgroundColor: 'rgba(255, 64, 147, 0.2)',
+    //borderColor: 'rgb(255, 64, 109)',
+    rotation: 0,
+    datasetLabel: 'Apoyo Económico'
+  });
+
+  // Gráfico 4: Apoyo Económico por Género
+  const genderGroup = transformAndSortData(apoyo, "Género", value => value.trim().toUpperCase());
+  renderBarChart("apoyoGeneroChart", {
+    title: 'Apoyo Económico por Género',
+    xTitle: 'Género',
+    yTitle: 'Número de Apoyos',
+    labels: ['Masculino', 'Femenino'],
+    values: genderGroup.values,
+    backgroundColor: ['rgba(64, 137, 255, 0.2)', 'rgba(192, 75, 169, 0.21)'],
+    borderColor: ['rgb(67, 110, 254)', 'rgb(192, 43, 159)'],
+    rotation: 0,
+    datasetLabel: 'Apoyo Económico'
+  });
+}
+
+// Sección Salidas Nacionales
+function renderSalidasNacionalesCharts(salidasNacionales) {
+  const groupApoyo = transformAndSortData(salidasNacionales, "Facultad", value => value.trim().toUpperCase());
+  renderBarChart("salidasNacionalesFacultadChart", {
+    title: 'Salidas Nacionales por Facultad',
+    xTitle: 'Facultad',
+    yTitle: 'Número de Salidas',
+    labels: groupApoyo.labels,
+    values: groupApoyo.values,
+    backgroundColor: 'rgba(153, 102, 255, 0.2)',
+    borderColor: 'rgba(153, 102, 255, 1)',
+    rotation: 0,
+    datasetLabel: 'Salidas Nacionales'
+  });
+
+  // Gráfico 2: Salidas Nacionales por Departamento
+  const groupDpto = transformAndSortData(salidasNacionales, "Dpto.", value => value.trim().toUpperCase());
+  renderBarChart("salidasNacionalesDptoChart", {
+    title: 'Salidas Nacionales por Departamento',
+    xTitle: 'Departamento',
+    yTitle: 'Número de Salidas',
+    labels: groupDpto.labels,
+    values: groupDpto.values,
+    backgroundColor: 'rgba(67, 64, 255, 0.2)',
+    borderColor: 'rgb(93, 64, 255)',
+    rotation: 0,
+    datasetLabel: 'Salidas Nacionales'
+  });
+
+  // Gráfico 3: Salidas Nacionales por Ciudad
+  const groupPais = transformAndSortData(salidasNacionales, "Ciudad del evento", value => value.trim().toUpperCase());
+  renderBarChart("salidasNacionalesCiudadChart", {
+    title: 'Salidas Nacionales por Ciudad',
+    xTitle: 'Ciudad',
+    yTitle: 'Número de Salidas',
+    labels: groupPais.labels,
+    values: groupPais.values,
+    //backgroundColor: 'rgba(255, 64, 147, 0.2)',
+    //borderColor: 'rgb(255, 64, 109)',
+    rotation: 0,
+    datasetLabel: 'Salidas Nacionales'
+  });
+
+  // Gráfico 4: Salidas Nacionales por Género
+  const genderGroup = transformAndSortData(salidasNacionales, "Género", value => value.trim().toUpperCase());
+  renderBarChart("salidasNacionalesGeneroChart", {
+    title: 'Salidas Nacionales por Género',
+    xTitle: 'Género',
+    yTitle: 'Número de Salidas',
+    labels: ['Masculino', 'Femenino'],
+    values: genderGroup.values,
+    backgroundColor: ['rgba(64, 137, 255, 0.2)', 'rgba(192, 75, 169, 0.21)'],
+    borderColor: ['rgb(67, 110, 254)', 'rgb(192, 43, 159)'],
+    rotation: 0,
+    datasetLabel: 'Salidas Nacionales'
   });
 }
 /**************************FUNCIONES********************************** */
@@ -281,11 +478,8 @@ function renderApoyoCharts(apoyo) {
  */
 // Función para transformar y ordenar los datos
 function transformAndSortData(data, key, normalizeFn) {
-  // Contar ocurrencias por clave
   const countData = groupByKey(data, key, normalizeFn);
-  // Convertir a arrays de labels y values
   const labels = Object.keys(countData);
-  // Ordenar los labels de mayor a menor según los valores
   const sortedLabels = labels.sort((a, b) => countData[b] - countData[a]);
   const sortedValues = sortedLabels.map(label => countData[label]);
   return { labels: sortedLabels, values: sortedValues };
@@ -321,35 +515,36 @@ function filterByKey(data, key, value) {
   return data.filter(item => item[key] === value);
 }
 
-// Función para contar por género (M/F)
 function countByGender(data) {
   const genderCount = { M: 0, F: 0 };
-
   data.forEach(item => {
-    const gender = item["Género"];  // Asegúrate que el campo se llama "Género"
+    const gender = item["Género"];
     if (gender === "M" || gender === "F") {
       genderCount[gender]++;
     }
   });
-
   return genderCount;
 }
 
 // Función para cambiar de año
 function changeYear(year) {
   selectedYear = year;
-  renderCharts();  // Vuelve a renderizar los gráficos con los datos del año seleccionado
+  renderCharts(); 
 }
 
 // Función para renderizar el gráfico de barras
 function renderBarChart(canvasId, config) {
   console.log("Renderizando gráfico:", canvasId, config);
-
-  const ctx = document.getElementById(canvasId).getContext('2d');
-  // Si hay un gráfico previo, destruirlo
-  if (window[canvasId] instanceof Chart) {
-    window[canvasId].destroy();
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) {
+    console.warn(`Canvas '${canvasId}' no encontrado.`);
+    return;
   }
+  const ctx = canvas.getContext("2d");
+
+  // Destruye instancia previa si existe
+  const existingChart = Chart.getChart(canvas);
+  if (existingChart) existingChart.destroy();
 
   const { backgroundColors, borderColors } = generateColors(config.labels.length);
   window[canvasId] = new Chart(ctx, {
@@ -456,10 +651,8 @@ function downloadChart(canvasId, fileName) {
   // Rellenar con fondo blanco
   ctx.fillStyle = "#ffffff";
   ctx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
-
   // Dibujar el canvas original sobre el fondo blanco
   ctx.drawImage(canvas, 0, 0);
-
   // Crear el enlace de descarga con el canvas temporal
   const link = document.createElement('a');
   link.href = tempCanvas.toDataURL('image/png');
@@ -474,16 +667,13 @@ function downloadSectionAsPDF(sectionId, fileName) {
     console.error("Asegúrate de haber incluido html2canvas y jsPDF.");
     return;
   }
-
   const section = document.getElementById(sectionId);
-
   // Ocultar solo los botones dentro de los gráficos
   const chartButtons = section.querySelectorAll("button");
   chartButtons.forEach(btn => btn.style.display = "none");
 
   html2canvas(section, { scale: 2, backgroundColor: "#ffffff" }).then(canvas => {
     const imgData = canvas.toDataURL("image/png");
-
     const pdf = new window.jspdf.jsPDF("p", "mm", "a4");
     const pageWidth = pdf.internal.pageSize.getWidth();
     const pageHeight = pdf.internal.pageSize.getHeight();
@@ -499,36 +689,29 @@ function downloadSectionAsPDF(sectionId, fileName) {
         let croppedCanvas = document.createElement("canvas");
         croppedCanvas.width = canvas.width;
         croppedCanvas.height = (sliceHeight * canvas.width) / imgWidth;
-
         let ctx = croppedCanvas.getContext("2d");
         ctx.drawImage(canvas, 0, canvasPosition, canvas.width, croppedCanvas.height, 0, 0, croppedCanvas.width, croppedCanvas.height);
-
         let imgDataPart = croppedCanvas.toDataURL("image/png");
         pdf.addImage(imgDataPart, "PNG", 10, 10, imgWidth, sliceHeight);
-
         remainingHeight -= sliceHeight;
         canvasPosition += croppedCanvas.height;
-
         if (remainingHeight > 0) pdf.addPage();
       }
     } else {
       pdf.addImage(imgData, "PNG", 10, 10, imgWidth, imgHeight);
     }
-
     // Restaurar la visibilidad de los botones dentro de los gráficos
     chartButtons.forEach(btn => btn.style.display = "inline-block");
-
     pdf.save(fileName + ".pdf");
   });
 }
-
 
 function downloadSectionAsExcel(sectionId, fileName) {
   if (typeof XLSX === "undefined") {
     console.error("Asegúrate de haber incluido la librería XLSX.");
     return;
   }
-  
+
   let wb = XLSX.utils.book_new();
   document.querySelectorAll(`#${sectionId} canvas`).forEach((canvas, index) => {
     let chart = Chart.getChart(canvas);
