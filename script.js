@@ -31,7 +31,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
 const sectionsByYear = {
   "2024": ["publicaciones", "salidas", "apoyo"],
-  "2025": ["publicaciones", "inscripciones", "salidas", "apoyo", "salidasNacionales"],
+  "2025": ["publicaciones", "inscripciones", "salidas", "apoyo", "salidasNacionales", "resumen"],
 };
 
 // Cargar datos desde el Apps Script
@@ -84,7 +84,8 @@ function renderSubTabs() {
       salidas: "Salidas al Exterior",
       apoyo: "Apoyo Económico",
       inscripciones: "Inscripciones",
-      salidasNacionales: "Salidas Nacionales"
+      salidasNacionales: "Salidas Nacionales",
+      resumen: "Resumen"
     };
     btn.textContent = names[section] || section;
     btn.addEventListener("click", () => {
@@ -147,6 +148,9 @@ function updateContent() {
       break;
     case "salidasNacionales":
       renderSalidasNacionalesCharts(data);
+      break;
+    case "resumen":
+      renderResumenCharts(data);
       break;
     default:
       console.error("Sección no reconocida:", selectedSection);
@@ -228,6 +232,218 @@ function renderPublicacionesCharts(publicaciones) {
     rotation: 0,
     datasetLabel: 'Publicaciones'
   });
+
+  // --- Gráfico 5: Publicaciones por Mes ---
+  const conteoPorMes = Array(12).fill(0);
+  publicaciones.forEach(pub => {
+    let fechaRaw = String(pub["Fecha del informe"] || "");
+    if (fechaRaw.includes("T")) fechaRaw = fechaRaw.split("T")[0];
+    // Parseamos como fecha local para evitar desfase de huso horario
+    const [anio, mes, dia] = fechaRaw.split("-").map(Number);
+    const fecha = new Date(anio, mes - 1, dia); // ← mes - 1 porque enero = 0
+    if (isNaN(fecha)) {
+      console.warn("⚠️ Fecha inválida:", pub["Fecha del informe"]);
+      return;
+    }
+    const mesIndex = fecha.getMonth(); // 0 - enero, 1 - febrero, ...
+    conteoPorMes[mesIndex]++;
+  });
+
+  const meses = [
+    "enero", "febrero", "marzo", "abril", "mayo", "junio",
+    "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"
+  ];
+
+  // 4) Filtrar meses con al menos 1 publicación
+  const paresFiltrados = conteoPorMes
+    .map((valor, idx) => [idx, valor])
+    .filter(([_, valor]) => valor > 0);
+
+  // 5) Construir arrays para el gráfico
+  const labelsMeses = paresFiltrados.map(([idx]) =>
+    meses[idx].charAt(0).toUpperCase() + meses[idx].slice(1)
+  );
+  const valoresMeses = paresFiltrados.map(([_, valor]) => valor);
+
+  // 7) Renderizar gráfico con Chart.js
+  renderBarChart("publicacionesPorMesChart", {
+    title: "Publicaciones por Mes",
+    xTitle: "Mes",
+    yTitle: "Número de publicaciones",
+    labels: labelsMeses,
+    values: valoresMeses,
+    backgroundColor: "rgba(255, 206, 86, 0.2)",
+    borderColor: "rgba(255, 206, 86, 1)",
+    datasetLabel: "Publicaciones"
+  });
+
+  // --- Gráfico 6: Monto total por Facultad ---
+  const montoPorFacultad = {};
+
+  publicaciones.forEach((pub) => {
+    const facultad = pub["Facultad"]?.trim().toUpperCase();
+    const valor = parseFloat(pub["Valor referencial DI"]) || 0;
+    if (facultad) {
+      montoPorFacultad[facultad] = (montoPorFacultad[facultad] || 0) + valor;
+    }
+  });
+
+  const facLabels = Object.keys(montoPorFacultad);
+  const facValores = facLabels.map(label => montoPorFacultad[label]);
+
+  renderBarChart("publicacionesMontoFacultadChart", {
+    title: "Valor Referencial Total por Facultad",
+    xTitle: "Facultad",
+    yTitle: "Valor en USD",
+    labels: facLabels,
+    values: facValores,
+    backgroundColor: "rgba(54, 162, 235, 0.2)",
+    borderColor: "rgba(54, 162, 235, 1)",
+    datasetLabel: "Valor USD",
+    options: {
+      scales: {
+        x: { ticks: { maxRotation: 45, minRotation: 0 } },
+        y: {
+          beginAtZero: true,
+          ticks: {
+            callback: value => "$" + value.toLocaleString()
+          }
+        }
+      },
+      plugins: {
+        tooltip: {
+          callbacks: {
+            label: ctx => {
+              const v = ctx.parsed.y;
+              return `${ctx.dataset.label}: $${v.toLocaleString()}`;
+            }
+          }
+        }
+      }
+    }
+  });
+
+  // --- Gráfico 7: Monto total por Departmento ---
+  const montoPorDepartamento = {};
+
+  publicaciones.forEach((pub) => {
+    const departamento = pub["Dpto."]?.trim().toUpperCase();
+    const valor = parseFloat(pub["Valor referencial DI"]) || 0;
+    if (departamento) {
+      montoPorDepartamento[departamento] = (montoPorDepartamento[departamento] || 0) + valor;
+    }
+  });
+
+  const dptoLabels = Object.keys(montoPorDepartamento);
+  const dptoValores = dptoLabels.map(label => montoPorDepartamento[label]);
+
+  renderBarChart("publicacionesMontoDptoChart", {
+    title: "Valor Referencial Total por Departamento",
+    xTitle: "Facultad",
+    yTitle: "Valor en USD",
+    labels: dptoLabels,
+    values: dptoValores,
+    backgroundColor: "rgba(54, 162, 235, 0.2)",
+    borderColor: "rgba(54, 162, 235, 1)",
+    datasetLabel: "Valor USD",
+    options: {
+      scales: {
+        x: { ticks: { maxRotation: 45, minRotation: 0 } },
+        y: {
+          beginAtZero: true,
+          ticks: {
+            callback: value => "$" + value.toLocaleString()
+          }
+        }
+      },
+      plugins: {
+        tooltip: {
+          callbacks: {
+            label: ctx => {
+              const v = ctx.parsed.y;
+              return `${ctx.dataset.label}: $${v.toLocaleString()}`;
+            }
+          }
+        }
+      }
+    }
+  });
+
+  // --- Gráfico 7: Monto total por Persona (horizontal) ---
+  const montoPorPersona = {};
+
+  publicaciones.forEach((pub) => {
+    const nombreCompleto = pub["Apellidos y Nombres"]?.trim();
+    const valor = parseFloat(pub["Valor referencial DI"]) || 0;
+    if (nombreCompleto) {
+      montoPorPersona[nombreCompleto] = (montoPorPersona[nombreCompleto] || 0) + valor;
+    }
+  });
+
+  // Ordenar por valor descendente
+  const personasOrdenadas = Object.entries(montoPorPersona)
+    .sort((a, b) => b[1] - a[1]);
+
+  const personasLabels = personasOrdenadas.map(entry => entry[0]);
+  const personasValores = personasOrdenadas.map(entry => entry[1]);
+
+  renderHorizontalBarChart("publicacionesMontoPersonaChart", {
+    title: "Valor Referencial por Persona",
+    xTitle: "Valor en USD",
+    yTitle: "Persona",
+    labels: personasLabels,
+    values: personasValores,
+    backgroundColor: "rgba(255, 99, 132, 0.2)",
+    borderColor: "rgba(255, 99, 132, 1)",
+    datasetLabel: "Valor USD",
+    currency: true,      // para formatear con $
+  });
+// --- Gráfico 7: Monto total por Persona (horizontal) ---
+const montoPorMes = {};
+
+// Recorremos las publicaciones y acumulamos monto por mes
+publicaciones.forEach(pub => {
+  const fechaStr = pub["Fecha del informe"];
+  const valor = parseFloat(pub["Valor referencial DI"]) || 0;
+
+  if (fechaStr) {
+    const fecha = new Date(fechaStr);
+    if (!isNaN(fecha)) {
+      // Obtener mes en formato "Año-Mes" para evitar problemas de orden (e.g. "2025-06")
+      const mesKey = `${fecha.getFullYear()}-${String(fecha.getMonth() + 1).padStart(2, '0')}`;
+
+      montoPorMes[mesKey] = (montoPorMes[mesKey] || 0) + valor;
+    }
+  }
+});
+
+// Ordenar meses cronológicamente
+const mesesOrdenados = Object.entries(montoPorMes).sort((a, b) => new Date(a[0]) - new Date(b[0]));
+
+// Etiquetas para el gráfico en formato "MMM YYYY" (Jun 2025)
+const mesesLabels = mesesOrdenados.map(([mes]) => {
+  const [anio, mesNum] = mes.split('-');
+  const fecha = new Date(anio, parseInt(mesNum, 10) -1);
+  // Solo mes en formato corto, sin año, en español
+  return fecha.toLocaleDateString('es-ES', { month: 'short' });
+});
+
+
+const mesesValores = mesesOrdenados.map(entry => entry[1]);
+
+// Renderizamos gráfico vertical
+renderHorizontalBarChart("publicacionesMontoMesChart", {
+  title: "Valor Referencial Total por Mes",
+  xTitle: "Monto en USD",
+  yTitle: "Mes",
+  labels: mesesLabels,
+  values: mesesValores,
+  backgroundColor: "rgba(54, 162, 235, 0.7)",
+  borderColor: "rgba(54, 162, 235, 1)",
+  datasetLabel: "Valor USD",
+  currency: true,
+});
+
 }
 
 // Sección Inscripciones
@@ -529,7 +745,7 @@ function countByGender(data) {
 // Función para cambiar de año
 function changeYear(year) {
   selectedYear = year;
-  renderCharts(); 
+  renderCharts();
 }
 
 // Función para renderizar el gráfico de barras
@@ -614,6 +830,121 @@ function renderBarChart(canvasId, config) {
     plugins: [ChartDataLabels]
   });
 }
+
+function renderHorizontalBarChart(canvasId, config) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return console.warn(`Canvas '${canvasId}' no encontrado.`);
+  const ctx = canvas.getContext("2d");
+
+  // Destruye instancia previa si existe
+  Chart.getChart(canvas)?.destroy();
+
+  // 1. Calcula altura del canvas en función del número de etiquetas
+  const alturaPorFila = 30;
+  const alturaMin = 300;
+  const alturaMax = 800;
+  const alturaCalculada = Math.max(
+    Math.min(config.labels.length * alturaPorFila, alturaMax),
+    alturaMin
+  );
+
+  // 2. Estilos del canvas
+  canvas.style.width = "100%";
+  canvas.style.height = `${alturaCalculada}px`;
+  canvas.style.display = "block";
+  canvas.style.padding = "0";
+  canvas.style.margin = "0";
+
+  // 3. Estilos del contenedor para evitar espacio en blanco
+  const cont = canvas.parentElement;
+  if (cont) {
+    cont.style.padding = "0";
+    cont.style.margin = "0";
+    cont.style.overflow = "hidden";
+  }
+
+  // 4. Escalado para nitidez
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = canvas.offsetWidth * dpr;
+  canvas.height = alturaCalculada * dpr;
+  ctx.scale(dpr, dpr);
+
+  // 5. Genera etiquetas abreviadas para el eje Y
+  const abreviar = label => {
+    const partes = label.trim().split(/\s+/);
+    const apellido = partes[0] || "";
+    const nombre = partes[2] || partes[1] || "";
+    return `${apellido} ${nombre}`;
+  };
+  const labelsY = config.labels.map(abreviar);
+
+  // 6. Renderiza el gráfico
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: labelsY,
+      datasets: [{
+        label: config.datasetLabel,
+        data: config.values,
+        backgroundColor: config.backgroundColor,
+        borderColor: config.borderColor,
+        borderWidth: config.borderWidth || 1
+      }]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: false,
+      maintainAspectRatio: false,
+      plugins: {
+        title: {
+          display: true,
+          text: config.title,
+          font: { size: 16, weight: 'bold' },
+          padding: { bottom: 10 }
+        },
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            title: items => {
+              const idx = items[0].dataIndex;
+              return config.labels[idx]; // nombre completo
+            },
+            label: ctx => {
+              const v = ctx.parsed.x;
+              return `${config.datasetLabel}: ${config.currency ? '$' : ''}${v.toLocaleString()}`;
+            }
+          }
+        },
+        datalabels: {
+          color: 'black',
+          anchor: 'end',
+          align: 'right',
+          formatter: val => config.currency ? `$${val.toLocaleString()}` : val
+        }
+      },
+      scales: {
+        x: {
+          title: { display: true, text: config.xTitle, font: { weight: 'bold' } },
+          beginAtZero: true,
+          ticks: {
+            callback: v => config.currency ? `$${v.toLocaleString()}` : v
+          }
+        },
+        y: {
+          title: { display: true, text: config.yTitle, font: { weight: 'bold' } },
+          ticks: {
+            autoSkip: false,
+            font: { size: 12 },
+            maxRotation: 0,
+            minRotation: 0
+          }
+        }
+      }
+    },
+    plugins: [ChartDataLabels]
+  });
+}
+
 
 // Función para generar colores aleatorios o de una paleta predefinida
 function generateColors(count) {
