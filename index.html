@@ -111,23 +111,55 @@
           </button>
         </div>
         <div class="chart">
-          <canvas id="inscripcionesDptoChart"></canvas>
-          <button class="download-btn"
-            onclick="downloadChart('inscripcionesDptoChart', 'Inscripciones_por_Departamento')">
+          <canvas id="inscripcionesMontoFacultadChart"></canvas>
+          <button class="download-btn" onclick="downloadChart('inscripcionesMontoFacultadChart', 'Auspicios_por_monto_facultad')">
+            Descargar
+          </button>
+        </div>
+        <div class="chart">
+          <canvas id="inscripcionesPorMesChart"></canvas>
+          <button class="download-btn" onclick="downloadChart('inscripcionesPorMesChart', 'Auspicios_por_mes')">
             Descargar
           </button>
         </div>
       </div>
       <div class="chart-container">
         <div class="chart">
+          <canvas id="inscripcionesDptoChart"></canvas>
+          <button class="download-btn"
+            onclick="downloadChart('inscripcionesDptoChart', 'Inscripciones_por_Departamento')">
+            Descargar
+          </button>
+        </div>
+        <div class="chart">
+          <canvas id="inscripcionesMontoDptoChart"></canvas>
+          <button class="download-btn" onclick="downloadChart('inscripcionesMontoDptoChart', 'Auspicios_por_monto_departamento')">
+            Descargar
+          </button>
+        </div>
+        <div class="chart">
           <canvas id="inscripcionesTipoChart"></canvas>
           <button class="download-btn" onclick="downloadChart('inscripcionesTipoChart', 'Inscripciones_Tipo')">
             Descargar
           </button>
         </div>
+      </div>
+      <div class="chart-container">
         <div class="chart">
           <canvas id="inscripcionesGeneroChart"></canvas>
           <button class="download-btn" onclick="downloadChart('inscripcionesGeneroChart', 'Inscripciones_por_genero')">
+            Descargar
+          </button>
+        </div>
+        <div class="chart">
+          <canvas id="inscripcionesMontoPersonaChart"></canvas>
+          <button class="download-btn" onclick="downloadChart('inscripcionesMontoPersonaChart', 'Auspicios_por_monto_persona')">
+            Descargar
+          </button>
+        </div>
+        <div class="chart">
+          <canvas id="inscripcionesMontoMesChart"></canvas>
+          <button class="download-btn" onclick="downloadChart('inscripcionesMontoMesChart', 'Auspicios_por_monto_mes')">
             Descargar
           </button>
         </div>
@@ -252,6 +284,19 @@
         </div>
       </div>
     </div>
+
+    <!-- Dashboard de Resumen -->
+    <div id="resumen" class="sub-tabcontent">
+      <h2>Resumen</h2>
+      <div class="descarga">
+        <button class="button descarga"
+          onclick="downloadSectionAsPDF('resumen', 'Dashboard_Resumen')">
+          Descargar PDF
+        </button>
+      </div>
+      <div id="resumenContainer"></div>
+    </div>
+
   </div>
   <script src="script.js"></script>
 </body>
