@@ -111,15 +111,32 @@ function updateContent() {
     selectedSection = availableSections[0];  // Primera sección válida
   }
   renderSubTabs();
+
   // Mostrar solo la sección activa
   document.querySelectorAll(".sub-tabcontent").forEach(div => div.style.display = "none");
   const sectionEl = document.getElementById(selectedSection);
   if (!sectionEl) return console.error("Sección no encontrada:", selectedSection);
   sectionEl.style.display = "block";
+
   // Limpiar mensajes previos
   sectionEl.querySelectorAll("p.no-data-msg").forEach(p => p.remove());
   clearCharts();
-  // Obtener datos
+
+  // Condición especial para la sección 'resumen'
+  if (selectedSection === "resumen") {
+    sectionEl.querySelectorAll("canvas").forEach(c => c.style.display = "none");
+    renderResumenTabla(
+      allData[selectedYear]?.publicaciones || [],
+      allData[selectedYear]?.inscripciones || []
+    );
+    renderResumenDepartamentoTabla(
+    allData[selectedYear]?.publicaciones || [],
+    allData[selectedYear]?.inscripciones || []
+  );
+    return;
+  }
+
+  // Obtener datos de la sección seleccionada
   const data = allData[selectedYear]?.[selectedSection];
   if (!Array.isArray(data) || data.length === 0) {
     // Mostrar mensaje de no datos, pero sin eliminar el HTML structure
@@ -130,8 +147,10 @@ function updateContent() {
     sectionEl.appendChild(msg);
     return;
   }
+
   // Asegurar que canvas estén visibles
   sectionEl.querySelectorAll("canvas").forEach(c => c.style.display = "block");
+
   // Llamada a la función de renderizado según sección
   switch (selectedSection) {
     case "publicaciones":
@@ -148,9 +167,6 @@ function updateContent() {
       break;
     case "salidasNacionales":
       renderSalidasNacionalesCharts(data);
-      break;
-    case "resumen":
-      renderResumenCharts(data);
       break;
     default:
       console.error("Sección no reconocida:", selectedSection);
@@ -248,24 +264,18 @@ function renderPublicacionesCharts(publicaciones) {
     const mesIndex = fecha.getMonth(); // 0 - enero, 1 - febrero, ...
     conteoPorMes[mesIndex]++;
   });
-
   const meses = [
     "enero", "febrero", "marzo", "abril", "mayo", "junio",
     "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"
   ];
-
-  // 4) Filtrar meses con al menos 1 publicación
+  //Filtrar meses con al menos 1 publicación
   const paresFiltrados = conteoPorMes
     .map((valor, idx) => [idx, valor])
     .filter(([_, valor]) => valor > 0);
-
-  // 5) Construir arrays para el gráfico
   const labelsMeses = paresFiltrados.map(([idx]) =>
     meses[idx].charAt(0).toUpperCase() + meses[idx].slice(1)
   );
   const valoresMeses = paresFiltrados.map(([_, valor]) => valor);
-
-  // 7) Renderizar gráfico con Chart.js
   renderBarChart("publicacionesPorMesChart", {
     title: "Publicaciones por Mes",
     xTitle: "Mes",
@@ -279,7 +289,6 @@ function renderPublicacionesCharts(publicaciones) {
 
   // --- Gráfico 6: Monto total por Facultad ---
   const montoPorFacultad = {};
-
   publicaciones.forEach((pub) => {
     const facultad = pub["Facultad"]?.trim().toUpperCase();
     const valor = parseFloat(pub["Valor referencial DI"]) || 0;
@@ -287,10 +296,8 @@ function renderPublicacionesCharts(publicaciones) {
       montoPorFacultad[facultad] = (montoPorFacultad[facultad] || 0) + valor;
     }
   });
-
   const facLabels = Object.keys(montoPorFacultad);
   const facValores = facLabels.map(label => montoPorFacultad[label]);
-
   renderBarChart("publicacionesMontoFacultadChart", {
     title: "Valor Referencial Total por Facultad",
     xTitle: "Facultad",
@@ -325,7 +332,6 @@ function renderPublicacionesCharts(publicaciones) {
 
   // --- Gráfico 7: Monto total por Departmento ---
   const montoPorDepartamento = {};
-
   publicaciones.forEach((pub) => {
     const departamento = pub["Dpto."]?.trim().toUpperCase();
     const valor = parseFloat(pub["Valor referencial DI"]) || 0;
@@ -333,10 +339,8 @@ function renderPublicacionesCharts(publicaciones) {
       montoPorDepartamento[departamento] = (montoPorDepartamento[departamento] || 0) + valor;
     }
   });
-
   const dptoLabels = Object.keys(montoPorDepartamento);
   const dptoValores = dptoLabels.map(label => montoPorDepartamento[label]);
-
   renderBarChart("publicacionesMontoDptoChart", {
     title: "Valor Referencial Total por Departamento",
     xTitle: "Facultad",
@@ -369,7 +373,7 @@ function renderPublicacionesCharts(publicaciones) {
     }
   });
 
-  // --- Gráfico 7: Monto total por Persona (horizontal) ---
+  // --- Gráfico 8: Monto total por Persona (horizontal) ---
   const montoPorPersona = {};
 
   publicaciones.forEach((pub) => {
@@ -379,11 +383,8 @@ function renderPublicacionesCharts(publicaciones) {
       montoPorPersona[nombreCompleto] = (montoPorPersona[nombreCompleto] || 0) + valor;
     }
   });
-
-  // Ordenar por valor descendente
   const personasOrdenadas = Object.entries(montoPorPersona)
     .sort((a, b) => b[1] - a[1]);
-
   const personasLabels = personasOrdenadas.map(entry => entry[0]);
   const personasValores = personasOrdenadas.map(entry => entry[1]);
 
@@ -398,52 +399,40 @@ function renderPublicacionesCharts(publicaciones) {
     datasetLabel: "Valor USD",
     currency: true,      // para formatear con $
   });
-// --- Gráfico 7: Monto total por Persona (horizontal) ---
-const montoPorMes = {};
 
-// Recorremos las publicaciones y acumulamos monto por mes
-publicaciones.forEach(pub => {
-  const fechaStr = pub["Fecha del informe"];
-  const valor = parseFloat(pub["Valor referencial DI"]) || 0;
-
-  if (fechaStr) {
-    const fecha = new Date(fechaStr);
-    if (!isNaN(fecha)) {
-      // Obtener mes en formato "Año-Mes" para evitar problemas de orden (e.g. "2025-06")
-      const mesKey = `${fecha.getFullYear()}-${String(fecha.getMonth() + 1).padStart(2, '0')}`;
-
-      montoPorMes[mesKey] = (montoPorMes[mesKey] || 0) + valor;
+  // --- Gráfico 9: Monto total por mes (horizontal) ---
+  const montoPorMes = {};
+  publicaciones.forEach(pub => {
+    const fechaStr = pub["Fecha del informe"];
+    const valor = parseFloat(pub["Valor referencial DI"]) || 0;
+    if (fechaStr) {
+      const fecha = new Date(fechaStr);
+      if (!isNaN(fecha)) {
+        // Obtener mes en formato "Año-Mes" para evitar problemas de orden (e.g. "2025-06")
+        const mesKey = `${fecha.getFullYear()}-${String(fecha.getMonth() + 1).padStart(2, '0')}`;
+        montoPorMes[mesKey] = (montoPorMes[mesKey] || 0) + valor;
+      }
     }
-  }
-});
-
-// Ordenar meses cronológicamente
-const mesesOrdenados = Object.entries(montoPorMes).sort((a, b) => new Date(a[0]) - new Date(b[0]));
-
-// Etiquetas para el gráfico en formato "MMM YYYY" (Jun 2025)
-const mesesLabels = mesesOrdenados.map(([mes]) => {
-  const [anio, mesNum] = mes.split('-');
-  const fecha = new Date(anio, parseInt(mesNum, 10) -1);
-  // Solo mes en formato corto, sin año, en español
-  return fecha.toLocaleDateString('es-ES', { month: 'short' });
-});
-
-
-const mesesValores = mesesOrdenados.map(entry => entry[1]);
-
-// Renderizamos gráfico vertical
-renderHorizontalBarChart("publicacionesMontoMesChart", {
-  title: "Valor Referencial Total por Mes",
-  xTitle: "Monto en USD",
-  yTitle: "Mes",
-  labels: mesesLabels,
-  values: mesesValores,
-  backgroundColor: "rgba(54, 162, 235, 0.7)",
-  borderColor: "rgba(54, 162, 235, 1)",
-  datasetLabel: "Valor USD",
-  currency: true,
-});
-
+  });
+  const mesesOrdenados = Object.entries(montoPorMes).sort((a, b) => new Date(a[0]) - new Date(b[0]));
+  const mesesLabels = mesesOrdenados.map(([mes]) => {
+    const [anio, mesNum] = mes.split('-');
+    const fecha = new Date(anio, parseInt(mesNum, 10) - 1);
+    return fecha.toLocaleDateString('es-ES', { month: 'short' });
+  });
+  const mesesValores = mesesOrdenados.map(entry => entry[1]);
+  // Renderizamos gráfico vertical
+  renderHorizontalBarChart("publicacionesMontoMesChart", {
+    title: "Valor Referencial Total por Mes",
+    xTitle: "Monto en USD",
+    yTitle: "Mes",
+    labels: mesesLabels,
+    values: mesesValores,
+    backgroundColor: "rgba(54, 162, 235, 0.7)",
+    borderColor: "rgba(54, 162, 235, 1)",
+    datasetLabel: "Valor USD",
+    currency: true,
+  });
 }
 
 // Sección Inscripciones
@@ -503,6 +492,191 @@ function renderInscripcionesCharts(inscripciones) {
     borderColor: ['rgb(67, 110, 254)', 'rgb(192, 43, 159)'],
     rotation: 0,
     datasetLabel: 'Inscripciones'
+  });
+
+  /**************************/
+    // --- Gráfico 5: Inscripciones por Mes ---
+  const conteoPorMes = Array(12).fill(0);
+  inscripciones.forEach(pub => {
+    let fechaRaw = String(pub["Fecha del informe"] || "");
+    if (fechaRaw.includes("T")) fechaRaw = fechaRaw.split("T")[0];
+    // Parseamos como fecha local para evitar desfase de huso horario
+    const [anio, mes, dia] = fechaRaw.split("-").map(Number);
+    const fecha = new Date(anio, mes - 1, dia); // ← mes - 1 porque enero = 0
+    if (isNaN(fecha)) {
+      console.warn("⚠️ Fecha inválida:", pub["Fecha del informe"]);
+      return;
+    }
+    const mesIndex = fecha.getMonth(); // 0 - enero, 1 - febrero, ...
+    conteoPorMes[mesIndex]++;
+  });
+  const meses = [
+    "enero", "febrero", "marzo", "abril", "mayo", "junio",
+    "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"
+  ];
+  //Filtrar meses con al menos 1 publicación
+  const paresFiltrados = conteoPorMes
+    .map((valor, idx) => [idx, valor])
+    .filter(([_, valor]) => valor > 0);
+  const labelsMeses = paresFiltrados.map(([idx]) =>
+    meses[idx].charAt(0).toUpperCase() + meses[idx].slice(1)
+  );
+  const valoresMeses = paresFiltrados.map(([_, valor]) => valor);
+  renderBarChart("inscripcionesPorMesChart", {
+    title: "Inscripciones por Mes",
+    xTitle: "Mes",
+    yTitle: "Número de Inscripciones",
+    labels: labelsMeses,
+    values: valoresMeses,
+    backgroundColor: "rgba(255, 206, 86, 0.2)",
+    borderColor: "rgba(255, 206, 86, 1)",
+    datasetLabel: "Inscripciones"
+  });
+
+  // --- Gráfico 6: Monto total por Facultad ---
+  const montoPorFacultad = {};
+  inscripciones.forEach((pub) => {
+    const facultad = pub["Facultad"]?.trim().toUpperCase();
+    const valor = parseFloat(pub["Valor referencial DI"]) || 0;
+    if (facultad) {
+      montoPorFacultad[facultad] = (montoPorFacultad[facultad] || 0) + valor;
+    }
+  });
+  const facLabels = Object.keys(montoPorFacultad);
+  const facValores = facLabels.map(label => montoPorFacultad[label]);
+  renderBarChart("inscripcionesMontoFacultadChart", {
+    title: "Valor Referencial Total por Facultad",
+    xTitle: "Facultad",
+    yTitle: "Valor en USD",
+    labels: facLabels,
+    values: facValores,
+    backgroundColor: "rgba(54, 162, 235, 0.2)",
+    borderColor: "rgba(54, 162, 235, 1)",
+    datasetLabel: "Valor USD",
+    options: {
+      scales: {
+        x: { ticks: { maxRotation: 45, minRotation: 0 } },
+        y: {
+          beginAtZero: true,
+          ticks: {
+            callback: value => "$" + value.toLocaleString()
+          }
+        }
+      },
+      plugins: {
+        tooltip: {
+          callbacks: {
+            label: ctx => {
+              const v = ctx.parsed.y;
+              return `${ctx.dataset.label}: $${v.toLocaleString()}`;
+            }
+          }
+        }
+      }
+    }
+  });
+
+  // --- Gráfico 7: Monto total por Departmento ---
+  const montoPorDepartamento = {};
+  inscripciones.forEach((pub) => {
+    const departamento = pub["Dpto."]?.trim().toUpperCase();
+    const valor = parseFloat(pub["Valor referencial DI"]) || 0;
+    if (departamento) {
+      montoPorDepartamento[departamento] = (montoPorDepartamento[departamento] || 0) + valor;
+    }
+  });
+  const dptoLabels = Object.keys(montoPorDepartamento);
+  const dptoValores = dptoLabels.map(label => montoPorDepartamento[label]);
+  renderBarChart("inscripcionesMontoDptoChart", {
+    title: "Valor Referencial Total por Departamento",
+    xTitle: "Facultad",
+    yTitle: "Valor en USD",
+    labels: dptoLabels,
+    values: dptoValores,
+    backgroundColor: "rgba(54, 162, 235, 0.2)",
+    borderColor: "rgba(54, 162, 235, 1)",
+    datasetLabel: "Valor USD",
+    options: {
+      scales: {
+        x: { ticks: { maxRotation: 45, minRotation: 0 } },
+        y: {
+          beginAtZero: true,
+          ticks: {
+            callback: value => "$" + value.toLocaleString()
+          }
+        }
+      },
+      plugins: {
+        tooltip: {
+          callbacks: {
+            label: ctx => {
+              const v = ctx.parsed.y;
+              return `${ctx.dataset.label}: $${v.toLocaleString()}`;
+            }
+          }
+        }
+      }
+    }
+  });
+
+  // --- Gráfico 8: Monto total por Persona (horizontal) ---
+  const montoPorPersona = {};
+  inscripciones.forEach((pub) => {
+    const nombreCompleto = pub["Apellidos y Nombres"]?.trim();
+    const valor = parseFloat(pub["Valor referencial DI"]) || 0;
+    if (nombreCompleto) {
+      montoPorPersona[nombreCompleto] = (montoPorPersona[nombreCompleto] || 0) + valor;
+    }
+  });
+  const personasOrdenadas = Object.entries(montoPorPersona)
+    .sort((a, b) => b[1] - a[1]);
+  const personasLabels = personasOrdenadas.map(entry => entry[0]);
+  const personasValores = personasOrdenadas.map(entry => entry[1]);
+
+  renderHorizontalBarChart("inscripcionesMontoPersonaChart", {
+    title: "Valor Referencial por Persona",
+    xTitle: "Valor en USD",
+    yTitle: "Persona",
+    labels: personasLabels,
+    values: personasValores,
+    backgroundColor: "rgba(255, 99, 132, 0.2)",
+    borderColor: "rgba(255, 99, 132, 1)",
+    datasetLabel: "Valor USD",
+    currency: true,      // para formatear con $
+  });
+
+  // --- Gráfico 9: Monto total por mes (horizontal) ---
+  const montoPorMes = {};
+  inscripciones.forEach(pub => {
+    const fechaStr = pub["Fecha del informe"];
+    const valor = parseFloat(pub["Valor referencial DI"]) || 0;
+    if (fechaStr) {
+      const fecha = new Date(fechaStr);
+      if (!isNaN(fecha)) {
+        // Obtener mes en formato "Año-Mes" para evitar problemas de orden (e.g. "2025-06")
+        const mesKey = `${fecha.getFullYear()}-${String(fecha.getMonth() + 1).padStart(2, '0')}`;
+        montoPorMes[mesKey] = (montoPorMes[mesKey] || 0) + valor;
+      }
+    }
+  });
+  const mesesOrdenados = Object.entries(montoPorMes).sort((a, b) => new Date(a[0]) - new Date(b[0]));
+  const mesesLabels = mesesOrdenados.map(([mes]) => {
+    const [anio, mesNum] = mes.split('-');
+    const fecha = new Date(anio, parseInt(mesNum, 10) - 1);
+    return fecha.toLocaleDateString('es-ES', { month: 'short' });
+  });
+  const mesesValores = mesesOrdenados.map(entry => entry[1]);
+  // Renderizamos gráfico vertical
+  renderHorizontalBarChart("inscripcionesMontoMesChart", {
+    title: "Valor Referencial Total por Mes",
+    xTitle: "Monto en USD",
+    yTitle: "Mes",
+    labels: mesesLabels,
+    values: mesesValores,
+    backgroundColor: "rgba(54, 162, 235, 0.7)",
+    borderColor: "rgba(54, 162, 235, 1)",
+    datasetLabel: "Valor USD",
+    currency: true,
   });
 }
 
@@ -682,6 +856,135 @@ function renderSalidasNacionalesCharts(salidasNacionales) {
     datasetLabel: 'Salidas Nacionales'
   });
 }
+
+// Sección Resumen
+function renderResumenTabla(publicaciones, inscripciones) {
+  const container = document.getElementById("resumenContainer");
+  container.innerHTML = ""; // Limpiar contenido previo
+
+  const title = document.createElement("h3");
+  title.textContent = "Resumen por Facultad";
+  container.appendChild(title);
+  const resumen = {};
+
+  // Procesar inscripciones
+  inscripciones.forEach((item) => {
+    const facultad = item["Facultad"]?.trim().toUpperCase();
+    const valor = parseFloat(item["Valor referencial DI"]) || 0;
+    if (!resumen[facultad]) resumen[facultad] = { inscCount: 0, inscValor: 0, pubCount: 0, pubValor: 0 };
+    resumen[facultad].inscCount += 1;
+    resumen[facultad].inscValor += valor;
+  });
+
+  // Procesar publicaciones
+  publicaciones.forEach((item) => {
+    const facultad = item["Facultad"]?.trim().toUpperCase();
+    const valor = parseFloat(item["Valor referencial DI"]) || 0;
+    if (!resumen[facultad]) resumen[facultad] = { inscCount: 0, inscValor: 0, pubCount: 0, pubValor: 0 };
+    resumen[facultad].pubCount += 1;
+    resumen[facultad].pubValor += valor;
+  });
+
+  // Crear tabla
+  const table = document.createElement("table");
+  table.className = "resumen-table";
+
+  // Encabezado
+  table.innerHTML = `
+    <thead>
+      <tr>
+        <th>FACULTAD</th>
+        <th>PUBLICACIONES</th>
+        <th>MONTO</th>
+        <th>INSCRIPCIONES</th>
+        <th>MONTO</th>
+        <th>MONTO TOTAL</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  `;
+
+  const tbody = table.querySelector("tbody");
+
+  // Llenar filas
+  Object.entries(resumen).forEach(([facultad, datos]) => {
+    const totalValor = datos.inscValor + datos.pubValor;
+
+    const row = document.createElement("tr");
+    row.innerHTML = `
+      <td>${facultad}</td>
+      <td>${datos.pubCount}</td>
+      <td>$${datos.pubValor.toFixed(2)}</td>
+      <td>${datos.inscCount}</td>
+      <td>$${datos.inscValor.toFixed(2)}</td>
+      <td><strong>$${totalValor.toFixed(2)}</strong></td>
+    `;
+    tbody.appendChild(row);
+  });
+
+  container.appendChild(table);
+}
+
+function renderResumenDepartamentoTabla(publicaciones, inscripciones) {
+  const container = document.getElementById("resumenContainer");
+
+  const title = document.createElement("h3");
+  title.textContent = "Resumen por Departamento";
+  container.appendChild(title);
+
+  const resumen = {};
+
+  inscripciones.forEach((item) => {
+    const dpto = item["Dpto."]?.trim().toUpperCase();
+    const valor = parseFloat(item["Valor referencial DI"]) || 0;
+    if (!resumen[dpto]) resumen[dpto] = { inscCount: 0, inscValor: 0, pubCount: 0, pubValor: 0 };
+    resumen[dpto].inscCount += 1;
+    resumen[dpto].inscValor += valor;
+  });
+
+  publicaciones.forEach((item) => {
+    const dpto = item["Dpto."]?.trim().toUpperCase();
+    const valor = parseFloat(item["Valor referencial DI"]) || 0;
+    if (!resumen[dpto]) resumen[dpto] = { inscCount: 0, inscValor: 0, pubCount: 0, pubValor: 0 };
+    resumen[dpto].pubCount += 1;
+    resumen[dpto].pubValor += valor;
+  });
+
+  const table = document.createElement("table");
+  table.className = "resumen-table";
+  table.innerHTML = `
+    <thead>
+      <tr>
+        <th>DEPARTAMENTO</th>
+        <th>PUBLICACIONES</th>
+        <th>MONTO</th>
+        <th>INSCRIPCIONES</th>
+        <th>MONTO</th>
+        <th>TOTAL</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  `;
+
+  const tbody = table.querySelector("tbody");
+
+  Object.entries(resumen).forEach(([dpto, datos]) => {
+    const total = datos.inscValor + datos.pubValor;
+    const row = document.createElement("tr");
+    row.innerHTML = `
+      <td>${dpto}</td>
+      <td>${datos.pubCount}</td>
+      <td>$${datos.pubValor.toFixed(2)}</td>
+      <td>${datos.inscCount}</td>
+      <td>$${datos.inscValor.toFixed(2)}</td>
+      <td><strong>$${total.toFixed(2)}</strong></td>
+    `;
+    tbody.appendChild(row);
+  });
+
+  container.appendChild(table);
+}
+
 /**************************FUNCIONES********************************** */
 
 /** 
