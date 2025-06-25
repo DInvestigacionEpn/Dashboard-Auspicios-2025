@@ -287,6 +287,7 @@ function renderPublicacionesCharts(publicaciones) {
     datasetLabel: "Publicaciones"
   });
 
+  let labels, values;
   // --- Gráfico 6: Monto total por Facultad ---
   const montoPorFacultad = {};
   publicaciones.forEach((pub) => {
@@ -296,14 +297,16 @@ function renderPublicacionesCharts(publicaciones) {
       montoPorFacultad[facultad] = (montoPorFacultad[facultad] || 0) + valor;
     }
   });
-  const facLabels = Object.keys(montoPorFacultad);
-  const facValores = facLabels.map(label => montoPorFacultad[label]);
+
+  ({ labels, values } = transformAndSortData(publicaciones,"Facultad",
+  f => f.trim().toUpperCase(),pub => parseFloat(pub["Valor referencial DI"]) || 0));
+
   renderBarChart("publicacionesMontoFacultadChart", {
     title: "Valor Referencial Total por Facultad",
     xTitle: "Facultad",
     yTitle: "Valor en USD",
-    labels: facLabels,
-    values: facValores,
+    labels: labels,
+    values: values,
     backgroundColor: "rgba(54, 162, 235, 0.2)",
     borderColor: "rgba(54, 162, 235, 1)",
     datasetLabel: "Valor USD",
@@ -331,22 +334,14 @@ function renderPublicacionesCharts(publicaciones) {
   });
 
   // --- Gráfico 7: Monto total por Departmento ---
-  const montoPorDepartamento = {};
-  publicaciones.forEach((pub) => {
-    const departamento = pub["Dpto."]?.trim().toUpperCase();
-    const valor = parseFloat(pub["Valor referencial DI"]) || 0;
-    if (departamento) {
-      montoPorDepartamento[departamento] = (montoPorDepartamento[departamento] || 0) + valor;
-    }
-  });
-  const dptoLabels = Object.keys(montoPorDepartamento);
-  const dptoValores = dptoLabels.map(label => montoPorDepartamento[label]);
+  ({ labels, values } = transformAndSortData(publicaciones,"Dpto.",f => f.trim().toUpperCase(),
+  pub => parseFloat(pub["Valor referencial DI"]) || 0));
   renderBarChart("publicacionesMontoDptoChart", {
     title: "Valor Referencial Total por Departamento",
     xTitle: "Facultad",
     yTitle: "Valor en USD",
-    labels: dptoLabels,
-    values: dptoValores,
+    labels: labels,
+    values: values,
     backgroundColor: "rgba(54, 162, 235, 0.2)",
     borderColor: "rgba(54, 162, 235, 1)",
     datasetLabel: "Valor USD",
@@ -459,8 +454,6 @@ function renderInscripcionesCharts(inscripciones) {
     yTitle: 'Número de Inscripciones',
     labels: deptGroup.labels,
     values: deptGroup.values,
-    //backgroundColor: 'rgba(75, 192, 192, 0.2)',
-    //borderColor: 'rgba(75, 192, 192, 1)',
     rotation: 0,
     datasetLabel: 'Inscripciones'
   });
@@ -862,127 +855,83 @@ function renderResumenTabla(publicaciones, inscripciones) {
   const container = document.getElementById("resumenContainer");
   container.innerHTML = ""; // Limpiar contenido previo
 
+  function construirResumen(campo) {
+    const resumen = {};
+
+    inscripciones.forEach((item) => {
+      const key = item[campo]?.trim().toUpperCase();
+      const valor = parseFloat(item["Valor referencial DI"]) || 0;
+      if (!resumen[key]) resumen[key] = { inscCount: 0, inscValor: 0, pubCount: 0, pubValor: 0 };
+      resumen[key].inscCount += 1;
+      resumen[key].inscValor += valor;
+    });
+
+    publicaciones.forEach((item) => {
+      const key = item[campo]?.trim().toUpperCase();
+      const valor = parseFloat(item["Valor referencial DI"]) || 0;
+      if (!resumen[key]) resumen[key] = { inscCount: 0, inscValor: 0, pubCount: 0, pubValor: 0 };
+      resumen[key].pubCount += 1;
+      resumen[key].pubValor += valor;
+    });
+
+    return Object.entries(resumen)
+      .map(([key, datos]) => ({
+        key,
+        ...datos,
+        total: datos.inscValor + datos.pubValor
+      }))
+      .sort((a, b) => b.total - a.total); // Orden descendente
+  }
+
+  function crearTabla(data, labelColumna) {
+    const table = document.createElement("table");
+    table.className = "resumen-table";
+
+    table.innerHTML += `
+      <thead>
+        <tr>
+          <th>${labelColumna}</th>
+          <th>INSCRIPCIONES</th>
+          <th>MONTO</th>
+          <th>PUBLICACIONES</th>
+          <th>MONTO</th>
+          <th>TOTAL</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    `;
+
+    const tbody = table.querySelector("tbody");
+
+    data.forEach(row => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${row.key}</td>
+        <td>${row.inscCount}</td>
+        <td>$${row.inscValor.toFixed(2)}</td>
+        <td>${row.pubCount}</td>
+        <td>$${row.pubValor.toFixed(2)}</td>
+        <td><strong>$${row.total.toFixed(2)}</strong></td>
+      `;
+      tbody.appendChild(tr);
+    });
+
+    container.appendChild(table);
+  }
+
+  // Construir y mostrar tablas ordenadas
+  const resumenFacultad = construirResumen("Facultad");
+  const resumenDepartamento = construirResumen("Dpto.");
+
   const title = document.createElement("h3");
   title.textContent = "Resumen por Facultad";
   container.appendChild(title);
-  const resumen = {};
 
-  // Procesar inscripciones
-  inscripciones.forEach((item) => {
-    const facultad = item["Facultad"]?.trim().toUpperCase();
-    const valor = parseFloat(item["Valor referencial DI"]) || 0;
-    if (!resumen[facultad]) resumen[facultad] = { inscCount: 0, inscValor: 0, pubCount: 0, pubValor: 0 };
-    resumen[facultad].inscCount += 1;
-    resumen[facultad].inscValor += valor;
-  });
-
-  // Procesar publicaciones
-  publicaciones.forEach((item) => {
-    const facultad = item["Facultad"]?.trim().toUpperCase();
-    const valor = parseFloat(item["Valor referencial DI"]) || 0;
-    if (!resumen[facultad]) resumen[facultad] = { inscCount: 0, inscValor: 0, pubCount: 0, pubValor: 0 };
-    resumen[facultad].pubCount += 1;
-    resumen[facultad].pubValor += valor;
-  });
-
-  // Crear tabla
-  const table = document.createElement("table");
-  table.className = "resumen-table";
-
-  // Encabezado
-  table.innerHTML = `
-    <thead>
-      <tr>
-        <th>FACULTAD</th>
-        <th>PUBLICACIONES</th>
-        <th>MONTO</th>
-        <th>INSCRIPCIONES</th>
-        <th>MONTO</th>
-        <th>MONTO TOTAL</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  `;
-
-  const tbody = table.querySelector("tbody");
-
-  // Llenar filas
-  Object.entries(resumen).forEach(([facultad, datos]) => {
-    const totalValor = datos.inscValor + datos.pubValor;
-
-    const row = document.createElement("tr");
-    row.innerHTML = `
-      <td>${facultad}</td>
-      <td>${datos.pubCount}</td>
-      <td>$${datos.pubValor.toFixed(2)}</td>
-      <td>${datos.inscCount}</td>
-      <td>$${datos.inscValor.toFixed(2)}</td>
-      <td><strong>$${totalValor.toFixed(2)}</strong></td>
-    `;
-    tbody.appendChild(row);
-  });
-
-  container.appendChild(table);
-}
-
-function renderResumenDepartamentoTabla(publicaciones, inscripciones) {
-  const container = document.getElementById("resumenContainer");
-
-  const title = document.createElement("h3");
-  title.textContent = "Resumen por Departamento";
-  container.appendChild(title);
-
-  const resumen = {};
-
-  inscripciones.forEach((item) => {
-    const dpto = item["Dpto."]?.trim().toUpperCase();
-    const valor = parseFloat(item["Valor referencial DI"]) || 0;
-    if (!resumen[dpto]) resumen[dpto] = { inscCount: 0, inscValor: 0, pubCount: 0, pubValor: 0 };
-    resumen[dpto].inscCount += 1;
-    resumen[dpto].inscValor += valor;
-  });
-
-  publicaciones.forEach((item) => {
-    const dpto = item["Dpto."]?.trim().toUpperCase();
-    const valor = parseFloat(item["Valor referencial DI"]) || 0;
-    if (!resumen[dpto]) resumen[dpto] = { inscCount: 0, inscValor: 0, pubCount: 0, pubValor: 0 };
-    resumen[dpto].pubCount += 1;
-    resumen[dpto].pubValor += valor;
-  });
-
-  const table = document.createElement("table");
-  table.className = "resumen-table";
-  table.innerHTML = `
-    <thead>
-      <tr>
-        <th>DEPARTAMENTO</th>
-        <th>PUBLICACIONES</th>
-        <th>MONTO</th>
-        <th>INSCRIPCIONES</th>
-        <th>MONTO</th>
-        <th>TOTAL</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  `;
-
-  const tbody = table.querySelector("tbody");
-
-  Object.entries(resumen).forEach(([dpto, datos]) => {
-    const total = datos.inscValor + datos.pubValor;
-    const row = document.createElement("tr");
-    row.innerHTML = `
-      <td>${dpto}</td>
-      <td>${datos.pubCount}</td>
-      <td>$${datos.pubValor.toFixed(2)}</td>
-      <td>${datos.inscCount}</td>
-      <td>$${datos.inscValor.toFixed(2)}</td>
-      <td><strong>$${total.toFixed(2)}</strong></td>
-    `;
-    tbody.appendChild(row);
-  });
-
-  container.appendChild(table);
+  crearTabla(resumenFacultad, "FACULTAD");
+  const title2 = document.createElement("h3");
+  title2.textContent = "Resumen por Departamento";
+  container.appendChild(title2);
+  crearTabla(resumenDepartamento, "DEPARTAMENTO");
 }
 
 /**************************FUNCIONES********************************** */
@@ -996,12 +945,21 @@ function renderResumenDepartamentoTabla(publicaciones, inscripciones) {
  * @returns {Object} Objeto con { labels, values }.
  */
 // Función para transformar y ordenar los datos
-function transformAndSortData(data, key, normalizeFn) {
-  const countData = groupByKey(data, key, normalizeFn);
-  const labels = Object.keys(countData);
-  const sortedLabels = labels.sort((a, b) => countData[b] - countData[a]);
-  const sortedValues = sortedLabels.map(label => countData[label]);
+function transformAndSortData(data, key, normalizeFn, getValueFn = () => 1) {
+  const result = {};
+  data.forEach(item => {
+    const rawKey = item[key];
+    if (!rawKey) return;
+    const normalized = normalizeFn(rawKey);
+    const value = getValueFn(item);
+    result[normalized] = (result[normalized] || 0) + value;
+  });
+  const labels = Object.keys(result);
+  const sortedLabels = labels.sort((a, b) => result[b] - result[a]);
+  const sortedValues = sortedLabels.map(label => result[label]);
+  console.log(sortedLabels, sortedValues);
   return { labels: sortedLabels, values: sortedValues };
+  
 }
 
 /**
